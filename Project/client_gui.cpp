@@ -122,7 +122,7 @@ int main ( int argc, char **argv)
     c = new chat_client (io_service, endpoint_iterator, &cb_recv);
     t = new std::thread ([&io_service](){ io_service.run(); });
 	  
-	  	begin_screen_2();
+
 
     // goes here, never to return.....
     return Fl::run ();

@@ -10,8 +10,9 @@ chat_client: chat_client.cpp chat_message.hpp
 		g++ ${CPPFLAGS} -o chat_client chat_client.cpp \
 			-lboost_system -lpthread
 
-client_gui: client_gui.cpp screen_2.cpp chat_message.hpp io.hpp screen_2.hpp 
-	g++ ${CPPFLAGS} -o client_gui client_gui.cpp\
+client_gui: client_gui.cpp chat_message.hpp io.hpp 
+	g++ ${CPPFLAGS} -o client_gui \
+	       	client_gui.cpp \
 		-lfltk -lboost_system -lpthread
 
 
