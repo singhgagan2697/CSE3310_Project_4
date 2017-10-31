@@ -23,9 +23,12 @@ Fl_Button clear (80, 275, 50,20,"Clear");
 Fl_Text_Buffer *buff = new Fl_Text_Buffer ();
 Fl_Text_Display *disp = new Fl_Text_Display (30,70,300,200,"chat");
 
+
 // boost asio instances
+
 chat_client *c = NULL;
 std::thread *t = NULL;
+
 
 static void cb_recv ( std::string S )
 {
@@ -46,6 +49,8 @@ static void cb_recv ( std::string S )
 
   win.show ();
 }
+
+
 
 static void cb_clear ()
 {
@@ -72,6 +77,8 @@ static void cb_quit ( )
 
   exit (0);
 }
+
+
 static void cb_input1 (Fl_Input*, void * userdata) 
 {
   chat_message msg;
@@ -85,9 +92,9 @@ static void cb_input1 (Fl_Input*, void * userdata)
   c->write(msg);
 }
 
+
 int main ( int argc, char **argv) 
 {
-
   win.begin ();
     win.add (input1);
     input1.callback ((Fl_Callback*)cb_input1,( void *) "Enter next:");
@@ -98,7 +105,8 @@ int main ( int argc, char **argv)
     disp->buffer(buff);
   win.end ();
   win.show ();
-
+	
+	
   try
   {
     if (argc != 3)
@@ -112,8 +120,9 @@ int main ( int argc, char **argv)
 
     auto endpoint_iterator = resolver.resolve({ argv[1], argv[2] });
     c = new chat_client (io_service, endpoint_iterator, &cb_recv);
-
     t = new std::thread ([&io_service](){ io_service.run(); });
+	  
+	  	begin_screen_2();
 
     // goes here, never to return.....
     return Fl::run ();
