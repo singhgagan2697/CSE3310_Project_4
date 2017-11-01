@@ -13,9 +13,20 @@
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Check_Button.H>
+
+Fl_Window win1	  (100,100,650, 300, "Login");
+Fl_Output welcome (70,30, 510, 50);
+Fl_Output welcome2(130, 90, 470, 30);
+Fl_Input nick	    (170, 150, 300, 20, "Nick:");
+Fl_Output nick_disc(170, 180, 250, 20);
+Fl_Button submit  (225, 220, 200, 30, "    Enter"); 
+Fl_Check_Button mod_button(500, 270, 50, 20, "Moderator?");
 
 
-Fl_Window win   (350, 350, "SimpleChat");
+Fl_Window win   (750, 400, "UberChat");
+Fl_Button mod   (680, 10, 50, 20, "Moderator");
+Fl_Output rooms (10, 40, 100, 20);
 Fl_Input input1 (30, 10, 180, 20, "In: ");
 Fl_Button quit  (30, 275, 50,20,"Quit");
 Fl_Button clear (80, 275, 50,20,"Clear");
@@ -92,10 +103,10 @@ static void cb_input1 (Fl_Input*, void * userdata)
   c->write(msg);
 }
 
-
-int main ( int argc, char **argv) 
-{
-  win.begin ();
+void beginChat(std::string nick_name){
+  win.begin();
+    win.color(FL_WHITE);
+    win.add(mod);
     win.add (input1);
     input1.callback ((Fl_Callback*)cb_input1,( void *) "Enter next:");
     input1.when ( FL_WHEN_ENTER_KEY );
@@ -103,10 +114,50 @@ int main ( int argc, char **argv)
     clear.callback (( Fl_Callback*) cb_clear );
     win.add (quit);
     disp->buffer(buff);
+    
   win.end ();
   win.show ();
-	
-	
+}
+
+static void cb_nick(){ 
+}
+
+static void cb_submit(){
+  std::string nick_name = nick.value();
+  beginChat(nick_name);
+  win1.hide();
+}
+
+void beginLogin(){
+  win1.color(FL_WHITE);
+  win1.begin();
+    welcome.value("  Welcome To UberChat");
+    welcome.textsize(40);
+    welcome.box(FL_BORDER_BOX);
+    win1.add(welcome);
+    welcome2.value("The new way to communicate");
+    welcome2.textsize(20);
+    welcome2.box(FL_NO_BOX);
+    win1.add(welcome2);
+    win1.add(nick);
+    nick_disc.value("Enter a nick name to get started");
+    nick_disc.box(FL_NO_BOX);
+    win1.add(nick_disc);
+    nick.callback((Fl_Callback *)cb_nick, (void*) "Enter nick:");
+    nick.when(FL_WHEN_ENTER_KEY);
+    win1.add(submit);
+    submit.callback((Fl_Callback *)cb_submit);
+    win1.add(mod_button);
+  win1.end();
+  win1.show();
+}
+
+
+
+int main ( int argc, char **argv) 
+{
+  beginLogin();
+  
   try
   {
     if (argc != 3)
