@@ -25,7 +25,7 @@ Fl_Check_Button mod_button(500, 270, 50, 20, "Moderator?");
 
 
 Fl_Window win   (750, 400, "UberChat");
-Fl_Button mod   (680, 10, 50, 20, "Moderator");
+Fl_Button mod   (650, 10, 80, 20, "Moderator");
 Fl_Output rooms (10, 40, 100, 20);
 Fl_Input input1 (30, 10, 180, 20, "In: ");
 Fl_Button quit  (30, 275, 50,20,"Quit");
@@ -107,6 +107,8 @@ void beginChat(std::string nick_name){
   win.begin();
     win.color(FL_WHITE);
     win.add(mod);
+    rooms.value("Rooms");
+    win.add(rooms);
     win.add (input1);
     input1.callback ((Fl_Callback*)cb_input1,( void *) "Enter next:");
     input1.when ( FL_WHEN_ENTER_KEY );
