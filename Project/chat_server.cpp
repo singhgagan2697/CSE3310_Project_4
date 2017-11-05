@@ -16,6 +16,7 @@
 #include <set>
 #include <utility>
 #include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
 #include "chat_message.hpp"
 
 using boost::asio::ip::tcp;
@@ -29,8 +30,26 @@ typedef std::deque<chat_message> chat_message_queue;
 class chat_participant
 {
 public:
+    chat_room(string p_name)
+  {
+      name = p_name;
+  }
   virtual ~chat_participant() {}
   virtual void deliver(const chat_message& msg) = 0;
+
+  string get_name()
+  {
+      return name;
+  }
+
+protected:
+    string name;
+};
+
+class chatroom_participant:chat_participant
+{
+public:
+
 };
 
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
@@ -40,6 +59,27 @@ typedef std::shared_ptr<chat_participant> chat_participant_ptr;
 class chat_room
 {
 public:
+    chat_room(string c_name)
+  {
+      name = c_name;
+  }
+
+  string get_name()
+  {
+      return name;
+  }
+
+  std::list<string> get_users()
+  {
+       std::list<string> users;
+      std::set<chat_participant_ptr>:const_iterator iterator;
+        for (iterator = participants_.begin(); iterator != participants_.end(); ++iterator)
+        {
+            users.push_back(iterator->get_name());
+        }
+        return users;
+  }
+
   void join(chat_participant_ptr participant)
   {
     participants_.insert(participant);
@@ -52,6 +92,18 @@ public:
     participants_.erase(participant);
   }
 
+  chat_participant_ptr get_participant(string name)
+  {
+      std::set<chat_participant_ptr>:const_iterator iterator;
+        for (iterator = participants_.begin(); iterator != participants_.end(); ++iterator)
+        {
+            if(iterator->get_name() == name)
+            {
+                return iterator;
+            }
+        }
+  }
+
   void deliver(const chat_message& msg)
   {
     recent_msgs_.push_back(msg);
@@ -62,7 +114,13 @@ public:
       participant->deliver(msg);
   }
 
+  chat_message_queue get_messages()
+  {
+      return recent_msgs_;
+  }
+
 private:
+    string name;
   std::set<chat_participant_ptr> participants_;
   enum { max_recent_msgs = 100 };
   chat_message_queue recent_msgs_;
@@ -177,7 +235,132 @@ public:
     do_accept();
   }
 
+  string add_client(string nick)
+  {
+        std::list<string>::const_iterator iterator;
+        for (iterator = clients.begin(); iterator != clients.end(); ++iterator)
+        {
+            if(*iterator == nick)
+            {
+                return "Nickname \'" + nick + "\' already exists!";
+            }
+        }
+        clients.push_back(nick);
+        return "";
+  }
+
+  string add_chatroom(string name)
+  {
+        std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            if((*iterator).name == name)
+            {
+                return "Chatroom \'" + name + "\' already exists!";
+            }
+        }
+        chatrooms.push_back(new chat_room(name));
+        return "";
+  }
+
+  void join_chatroom(string c_name, string p_name)
+  {
+      std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            if((*iterator).name == c_name)
+            {
+                chat_participant_ptr participant = iterator->get_participant(p_name);
+                if(participant == NULL)
+                {
+                    iterator->join(new chatroom_participant(p_name));
+                }
+                break;
+            }
+        }
+  }
+
+  void leave_chatroom(string c_name, string p_name)
+  {
+      std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            if((*iterator).name == c_name)
+            {
+                chat_participant_ptr participant = iterator->get_participant(p_name);
+                if(participant != NULL)
+                {
+                    iterator->leave(new chatroom_participant(p_name));
+                }
+                break;
+            }
+        }
+  }
+
+  void delete_chatroom(string name)
+  {
+      std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            if((*iterator).name == name)
+            {
+                chatrooms.remove(iterator);
+            }
+        }
+  }
+
+  void delete_client(string nick)
+  {
+        std::list<string>::const_iterator iterator;
+        for (iterator = clients.begin(); iterator != clients.end(); ++iterator)
+        {
+            if(*iterator == nick)
+            {
+                clients.remove(nick);
+            }
+        }
+  }
+
+  std::list<string> req_chatrooms()
+  {
+      std::list<string> chatrooom_names;
+      std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            chatrooom_names.push_back(iterator->get_name());
+        }
+      return chatrooom_names;
+  }
+
+  std::list<string> req_users(string c_name)
+  {
+      std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            if(c_name == iterator->get_name())
+            {
+                return iterator->get_users();
+            }
+        }
+      return NULL;
+  }
+
+  std::list<string> reqtext(string c_name)
+  {
+      std::list<chat_room>::const_iterator iterator;
+        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
+        {
+            if(c_name == iterator->get_name())
+            {
+                return iterator->get_messages();
+            }
+        }
+      return NULL;
+  }
 private:
+    std::list<string> clients;
+    std::list<chat_room> chatrooms;
+
   void do_accept()
   {
     acceptor_.async_accept(socket_,
@@ -227,4 +410,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-
