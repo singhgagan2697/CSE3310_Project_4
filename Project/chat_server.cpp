@@ -136,7 +136,7 @@ class chat_session
     public std::enable_shared_from_this<chat_session>
 {
 public:
-  chat_session(tcp::socket socket, chat_room& room, std::string p_name)
+  chat_session(tcp::socket socket, chat_room* room, std::string p_name)
   : socket_(std::move(socket)),
     room_(room), name_(p_name)
   {
@@ -145,7 +145,7 @@ public:
 
   void start()
   {
-    room_.join(shared_from_this());
+    room_->join(shared_from_this());
     do_read_header();
   }
 
@@ -174,7 +174,7 @@ private:
           }
           else
           {
-            room_.leave(shared_from_this());
+            room_->leave(shared_from_this());
           }
         });
   }
@@ -188,12 +188,12 @@ private:
         {
           if (!ec)
           {
-            room_.deliver(read_msg_);
+            room_->deliver(read_msg_);
             do_read_header();
           }
           else
           {
-            room_.leave(shared_from_this());
+            room_->leave(shared_from_this());
           }
         });
   }
@@ -216,13 +216,13 @@ private:
           }
           else
           {
-            room_.leave(shared_from_this());
+            room_->leave(shared_from_this());
           }
         });
   }
 
   tcp::socket socket_;
-  chat_room& room_;
+  chat_room* room_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
 };
@@ -278,8 +278,9 @@ public:
                 chat_participant_ptr participant = (*iterator)->get_participant(p_name);
                 if(participant == NULL)
                 {
-                   chat_room room =  *(*iterator);
-                    (*iterator)->join(new chat_session(socket, room, p_name));
+                   //chat_room room =  *(*iterator);
+                   chat_session* session = new chat_session(std::move(socket), *iterator, p_name);
+                    (*iterator)->join((chat_participant_ptr)session);
                 }
                 break;
             }
