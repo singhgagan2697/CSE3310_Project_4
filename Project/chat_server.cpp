@@ -138,9 +138,9 @@ class chat_session
 public:
   chat_session(tcp::socket socket, chat_room& room, std::string p_name)
   : socket_(std::move(socket)),
-    room_(room)
+    room_(room), name_(p_name)
   {
-      name = p_name;
+      //name = p_name;
   }
 
   void start()
@@ -160,6 +160,7 @@ public:
   }
 
 private:
+    std::string name_;
   void do_read_header()
   {
     auto self(shared_from_this());
@@ -277,7 +278,8 @@ public:
                 chat_participant_ptr participant = (*iterator)->get_participant(p_name);
                 if(participant == NULL)
                 {
-                    (*iterator)->join(new chat_session(socket, *iterator, p_name));
+                   chat_room room =  *(*iterator);
+                    (*iterator)->join(new chat_session(socket, room, p_name));
                 }
                 break;
             }
@@ -338,6 +340,7 @@ public:
 
   std::list<std::string> req_users(std::string c_name)
   {
+      std::list<std::string> users;
       std::list<chat_room*>::const_iterator iterator;
         for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
         {
@@ -346,11 +349,12 @@ public:
                 return (*iterator)->get_users();
             }
         }
-      return 0;
+      return users;
   }
 
-  std::list<std::string> reqtext(std::string c_name)
+  chat_message_queue reqtext(std::string c_name)
   {
+      chat_message_queue recent_msgs;
       std::list<chat_room*>::const_iterator iterator;
         for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
         {
@@ -359,7 +363,7 @@ public:
                 return (*iterator)->get_messages();
             }
         }
-      return 0;
+      return recent_msgs;
   }
 private:
     std::list<std::string> clients;
