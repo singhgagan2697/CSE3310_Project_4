@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 //
 // chat_server.cpp
 // ~~~~~~~~~~~~~~~
@@ -1684,4 +1681,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
->>>>>>> aee1021780bc5dbe4c5e3460abc784f5454c16e2
