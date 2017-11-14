@@ -11,8 +11,16 @@
 #include <cstdlib>
 #include <deque>
 #include <iostream>
+#include <string>
 #include <thread>
+#include <vector>
+#include <algorithm>
 #include <boost/asio.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/date_time.hpp>
+
 #include "chat_message.hpp"
 
 using boost::asio::ip::tcp;
@@ -47,6 +55,44 @@ public:
   void close()
   {
     io_service_.post([this]() { socket_.close(); });
+  }
+/*
+  void set_name(std::string pname)
+  {
+    this->participant_name = pname;
+    std::cout << participant_name << std::endl;
+  }
+
+  void set_uuid(boost::uuids::uuid id)
+  {
+    this->uuid = id;
+  }
+
+  boost::uuids::uuid get_uuid()
+  {
+    return this->uuid;
+  }
+ */ 
+  
+  void add_time(chat_message& msg)
+  {
+    using namespace boost::posix_time;
+    boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
+    std::string add_data = to_iso_string(time_local) + "," + msg.body();
+    msg.body_length(std::strlen(add_data.c_str()));
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+  }
+  
+  
+  void nick(std::string nick_name)
+  {
+    chat_message msg;
+    std::string data = "NICK," + nick_name; 
+    msg.body_length(std::strlen(data.c_str()));
+    std::memcpy(msg.body(), data.c_str(), msg.body_length());
+    add_time(msg);
+    msg.encode_header();
+    this->write(msg);
   }
 
 private:
@@ -87,7 +133,8 @@ private:
         {
           if (!ec)
           {
-            //std::cout.write(read_msg_.body(), read_msg_.body_length());
+            std::cout.write(read_msg_.body(), read_msg_.body_length());
+std::cout << read_msg_.body() << std::endl;
 	    data_recv_ ( read_msg_.body() );
             do_read_header();
           }
@@ -126,6 +173,8 @@ private:
   void (*data_recv_) (std::string S);
   chat_message read_msg_;
   chat_message_queue write_msgs_;
+  std::string participant_name;
+  boost::uuids::uuid uuid;
 };
 #ifdef XXX
 int mainxx(int argc, char* argv[])

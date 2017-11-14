@@ -13,7 +13,7 @@ chat_client: chat_client.cpp chat_message.hpp
 client_gui: client_gui.cpp chat_message.hpp io.hpp 
 	g++ ${CPPFLAGS} -o client_gui \
 	       	client_gui.cpp \
-		-lfltk -lboost_system -lpthread
+		-lfltk -lboost_system -lpthread -lboost_date_time
 
 
 clean:

@@ -269,6 +269,7 @@ void beginChat(const char *nick_name){
 //Callbacks
 static void cb_submit(){
   const char * nick_name = nick.value();
+  c->nick(std::string(nick_name, std::strlen(nick_name)));
   beginChat(nick_name);
   win1.hide();
 }

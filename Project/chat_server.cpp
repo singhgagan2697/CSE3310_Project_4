@@ -16,6 +16,9 @@
 #include <set>
 #include <utility>
 #include <boost/asio.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include "chat_message.hpp"
 
 using boost::asio::ip::tcp;
@@ -23,6 +26,7 @@ using boost::asio::ip::tcp;
 //----------------------------------------------------------------------
 
 typedef std::deque<chat_message> chat_message_queue;
+
 
 //----------------------------------------------------------------------
 
@@ -42,6 +46,9 @@ class chat_room
 public:
   void join(chat_participant_ptr participant)
   {
+    boost::uuids::uuid uuid = boost::uuids::random_generator()();
+    std::cout << uuid << std::endl;
+    //participant->set_uuid(uuid);
     participants_.insert(participant);
     for (auto msg: recent_msgs_)
       participant->deliver(msg);
@@ -125,6 +132,7 @@ private:
         {
           if (!ec)
           {
+          std::cout << "In read body " << read_msg_.body() << std::endl;
             room_.deliver(read_msg_);
             do_read_header();
           }
