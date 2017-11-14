@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <zlib.h>
 #include <boost/asio.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -83,6 +84,17 @@ public:
     std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
   }
   
+  void add_crc(chat_message& msg)
+  {
+    //Got this part of the code from cksum.cpp 
+    unsigned int crc;
+    
+    crc = crc32(0L, Z_NULL, 0);
+    crc = crc32(crc, (const unsigned char*) msg.body(), msg.body_length());
+    std::string add_data = std::to_string(crc) + "," + msg.body();
+    msg.body_length(std::strlen(add_data.c_str()));
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+  }
   
   void nick(std::string nick_name)
   {
@@ -91,6 +103,7 @@ public:
     msg.body_length(std::strlen(data.c_str()));
     std::memcpy(msg.body(), data.c_str(), msg.body_length());
     add_time(msg);
+    add_crc(msg);
     msg.encode_header();
     this->write(msg);
   }
