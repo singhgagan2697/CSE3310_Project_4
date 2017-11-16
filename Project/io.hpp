@@ -12,6 +12,8 @@
 #include <deque>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <iterator>
 #include <thread>
 #include <vector>
 #include <algorithm>
@@ -57,24 +59,7 @@ public:
   {
     io_service_.post([this]() { socket_.close(); });
   }
-/*
-  void set_name(std::string pname)
-  {
-    this->participant_name = pname;
-    std::cout << participant_name << std::endl;
-  }
 
-  void set_uuid(boost::uuids::uuid id)
-  {
-    this->uuid = id;
-  }
-
-  boost::uuids::uuid get_uuid()
-  {
-    return this->uuid;
-  }
- */ 
-  
   void add_time(chat_message& msg)
   {
     using namespace boost::posix_time;
@@ -107,8 +92,26 @@ public:
     msg.encode_header();
     this->write(msg);
   }
+  
+  void requuid()
+  {
+    chat_message msg;
+    std::string data = "REQUUID";
+    msg.body_length(std::strlen(data.c_str()));
+    std::memcpy(msg.body(), data.c_str(), msg.body_length());
+    add_time(msg);
+    add_crc(msg);
+    msg.encode_header();
+    this->write(msg);
+  }
 
 private:
+    
+  void set_uuid(std::string id)
+  {
+    this->uuid = id;
+  }
+
   void do_connect(tcp::resolver::iterator endpoint_iterator)
   {
     boost::asio::async_connect(socket_, endpoint_iterator,
@@ -138,6 +141,24 @@ private:
         });
   }
 
+  template<typename Out>
+  void split_out(const std::string &s, char delim, Out result)
+  {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+      *(result++) = item;
+    }
+  }
+  
+  std::vector<std::string> split(const std::string &data, char delim)
+  {
+    std::vector<std::string> tokens;
+    split_out(data, delim, std::back_inserter(tokens));
+    return tokens;
+  }
+  
   void do_read_body()
   {
     boost::asio::async_read(socket_,
@@ -146,9 +167,16 @@ private:
         {
           if (!ec)
           {
+            std::vector<std::string> tokens = split(read_msg_.body(), ',');
+            if((tokens.at(2)).compare("REQUUID") == 0)
+            {
+              if(tokens.size() == 4)
+              {
+                this->set_uuid(tokens.at(3));    
+              }
+            }
             std::cout.write(read_msg_.body(), read_msg_.body_length());
-std::cout << read_msg_.body() << std::endl;
-	    data_recv_ ( read_msg_.body() );
+            data_recv_ ( read_msg_.body() );
             do_read_header();
           }
           else
@@ -187,7 +215,7 @@ private:
   chat_message read_msg_;
   chat_message_queue write_msgs_;
   std::string participant_name;
-  boost::uuids::uuid uuid;
+  std::string uuid;
 };
 #ifdef XXX
 int mainxx(int argc, char* argv[])

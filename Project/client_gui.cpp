@@ -270,6 +270,7 @@ void beginChat(const char *nick_name){
 static void cb_submit(){
   const char * nick_name = nick.value();
   c->nick(std::string(nick_name, std::strlen(nick_name)));
+  c->requuid();
   beginChat(nick_name);
   win1.hide();
 }
