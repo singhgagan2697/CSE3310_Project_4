@@ -35,13 +35,39 @@ class chat_participant
 public:
   virtual ~chat_participant() {}
   virtual void deliver(const chat_message& msg) = 0;
+   
+  void add_time(chat_message& msg)
+  {
+    using namespace boost::posix_time;
+    boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
+    std::string add_data = to_iso_string(time_local) + "," + msg.body();
+    msg.body_length(std::strlen(add_data.c_str()));
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+  }
   
+  void add_crc(chat_message& msg)
+  {
+    //Got this part of the code from cksum.cpp 
+    unsigned int crc;
+    
+    crc = crc32(0L, Z_NULL, 0);
+    crc = crc32(crc, (const unsigned char*) msg.body(), msg.body_length());
+    std::string add_data = std::to_string(crc) + "," + msg.body();
+    msg.body_length(std::strlen(add_data.c_str()));
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+  }
+ 
   void set_uuid(std::string id)
   {
     chat_message msg;
-    
+    id = "REQUUID" + id;
+    msg.body_length(std::strlen(id.c_str()));
+    std::memcpy(msg.body(), id.c_str(), msg.body_length());
+    add_time(msg);
+    add_crc(msg);
+    this->deliver(msg);
   }
-  
+
 };
 
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
