@@ -35,6 +35,13 @@ class chat_participant
 public:
   virtual ~chat_participant() {}
   virtual void deliver(const chat_message& msg) = 0;
+  
+  void set_uuid(std::string id)
+  {
+    chat_message msg;
+    
+  }
+  
 };
 
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
@@ -48,10 +55,11 @@ public:
   {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
     std::cout << uuid << std::endl;
-    //participant->set_uuid(uuid);
+    participant->set_uuid(to_string(uuid));
     participants_.insert(participant);
     for (auto msg: recent_msgs_)
       participant->deliver(msg);
+    
   }
 
   void leave(chat_participant_ptr participant)

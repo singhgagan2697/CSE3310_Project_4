@@ -110,6 +110,7 @@ private:
   void set_uuid(std::string id)
   {
     this->uuid = id;
+    std::cout << this->uuid;
   }
 
   void do_connect(tcp::resolver::iterator endpoint_iterator)
