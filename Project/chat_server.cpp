@@ -15,10 +15,12 @@
 #include <memory>
 #include <set>
 #include <utility>
+#include <zlib.h>
 #include <boost/asio.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/date_time.hpp>
 #include "chat_message.hpp"
 
 using boost::asio::ip::tcp;
@@ -35,7 +37,7 @@ class chat_participant
 public:
   virtual ~chat_participant() {}
   virtual void deliver(const chat_message& msg) = 0;
-   
+/*   
   void add_time(chat_message& msg)
   {
     using namespace boost::posix_time;
@@ -60,14 +62,16 @@ public:
   void set_uuid(std::string id)
   {
     chat_message msg;
-    id = "REQUUID" + id;
-    msg.body_length(std::strlen(id.c_str()));
-    std::memcpy(msg.body(), id.c_str(), msg.body_length());
+    std::string data;
+    data = "REQUUID," + id;
+    msg.body_length(std::strlen(data.c_str()));
+    std::memcpy(msg.body(), data.c_str(), msg.body_length());
     add_time(msg);
     add_crc(msg);
+    std::cout << "Set uuid msg body ----" << msg.body() << std::endl;
     this->deliver(msg);
   }
-
+*/
 };
 
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
@@ -80,9 +84,13 @@ public:
   void join(chat_participant_ptr participant)
   {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    std::cout << uuid << std::endl;
-    participant->set_uuid(to_string(uuid));
     participants_.insert(participant);
+    //participant->set_uuid(to_string(uuid));
+    chat_message testmsg;
+    std::string test_data = "123456,456123,UUID,123456789";
+    testmsg.body_length(std::strlen(test_data.c_str()));
+    std::memcpy(testmsg.body(), test_data.c_str(), testmsg.body_length());
+    participant->deliver(testmsg);
     for (auto msg: recent_msgs_)
       participant->deliver(msg);
     
