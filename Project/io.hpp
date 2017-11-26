@@ -171,7 +171,7 @@ private:
         {
           if (!ec)
           {
-            //std::cout << "read msg body is ---- " <<read_msg_.body() << std::endl;
+            std::cout << "read msg body is ---- " <<read_msg_.body() << std::endl;
             /*std::vector<std::string> tokens = split(read_msg_.body(), ',');
             if((tokens.at(2)).compare("REQUUID") == 0)
             {
