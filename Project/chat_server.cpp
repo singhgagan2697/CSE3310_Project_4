@@ -26,6 +26,9 @@ typedef std::deque<chat_message> chat_message_queue;
 
 //----------------------------------------------------------------------
 
+int uuid = 1;
+std::set<chat_room> chatrooms;
+
 class chat_participant
 {
 public:
@@ -62,10 +65,16 @@ public:
       participant->deliver(msg);
   }
 
+  void set_name(char name[50])
+  {
+      strcpy(name_, name);
+  }
+
 private:
   std::set<chat_participant_ptr> participants_;
   enum { max_recent_msgs = 100 };
   chat_message_queue recent_msgs_;
+  char name_[50];
 };
 
 //----------------------------------------------------------------------
@@ -79,6 +88,7 @@ public:
     : socket_(std::move(socket)),
       room_(room)
   {
+      uuid_ = uuid++;
   }
 
   void start()
@@ -98,6 +108,27 @@ public:
   }
 
 private:
+  void add_time(chat_message& msg)
+  {
+    using namespace boost::posix_time;
+    boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
+    std::string add_data = to_iso_string(time_local) + "," + msg.body();
+    msg.body_length(std::strlen(add_data.c_str()));
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+  }
+
+  void add_crc(chat_message& msg)
+  {
+    //Got this part of the code from cksum.cpp
+    unsigned int crc;
+
+    crc = crc32(0L, Z_NULL, 0);
+    crc = crc32(crc, (const unsigned char*) msg.body(), msg.body_length());
+    std::string add_data = std::to_string(crc) + "," + msg.body();
+    msg.body_length(std::strlen(add_data.c_str()));
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+  }
+
   void do_read_header()
   {
     auto self(shared_from_this());
@@ -107,7 +138,21 @@ private:
         {
           if (!ec && read_msg_.decode_header())
           {
-            do_read_body();
+            if(read_msg_.body() == "REQUUID")
+            {
+                chat_message msg;
+                std::string data = "REQUUID," + uuid_;
+                msg.body_length(std::strlen(data.c_str()));
+                std::memcpy(msg.body(), data.c_str(), msg.body_length());
+                add_time(msg);
+                add_crc(msg);
+                msg.encode_header();
+                deliver(msg);
+            }
+            else
+            {
+                do_read_body();
+            }
           }
           else
           {
@@ -158,6 +203,7 @@ private:
         });
   }
 
+  int uuid_;
   tcp::socket socket_;
   chat_room& room_;
   chat_message read_msg_;
@@ -175,6 +221,8 @@ public:
       socket_(io_service)
   {
     do_accept();
+    chatrooms.insert(room_);
+    room_.set_name("The Lobby");
   }
 
 private:
@@ -227,4 +275,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-
