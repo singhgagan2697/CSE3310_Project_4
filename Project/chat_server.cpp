@@ -87,7 +87,7 @@ public:
     participants_.insert(participant);
     //participant->set_uuid(to_string(uuid));
     chat_message testmsg;
-    std::string test_data = "123456,456123,UUID,123456789";
+    std::string test_data = "simple text";
     testmsg.body_length(std::strlen(test_data.c_str()));
     std::memcpy(testmsg.body(), test_data.c_str(), testmsg.body_length());
     //participant->deliver(testmsg);
@@ -104,6 +104,7 @@ public:
 
   void deliver(const chat_message& msg)
   {
+    std::cout << "Chat room deliver is called" << std::endl;
     recent_msgs_.push_back(msg);
     while (recent_msgs_.size() > max_recent_msgs)
       recent_msgs_.pop_front();
@@ -143,6 +144,7 @@ public:
     write_msgs_.push_back(msg);
     if (!write_in_progress)
     {
+      std::cout << "I did do write in deliver" << std::endl;
       do_write();
     }
   }

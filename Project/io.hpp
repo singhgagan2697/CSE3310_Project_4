@@ -30,6 +30,8 @@ using boost::asio::ip::tcp;
 
 typedef std::deque<chat_message> chat_message_queue;
 
+int i = 0;
+
 class chat_client
 {
 public:
@@ -171,7 +173,8 @@ private:
         {
           if (!ec)
           {
-            std::cout << "read msg body is ---- " <<read_msg_.body() << std::endl;
+            std::cout << i << " read msg body is ---- " << read_msg_.body() << std::endl;
+            i++;
             /*std::vector<std::string> tokens = split(read_msg_.body(), ',');
             if((tokens.at(2)).compare("REQUUID") == 0)
             {
