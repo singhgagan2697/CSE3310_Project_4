@@ -90,7 +90,7 @@ public:
     std::string test_data = "simple text";
     testmsg.body_length(std::strlen(test_data.c_str()));
     std::memcpy(testmsg.body(), test_data.c_str(), testmsg.body_length());
-    //participant->deliver(testmsg);
+    participant->deliver(testmsg);
     //std::cout << "testmsg is ---- " << testmsg.body() << std::endl;
     for (auto msg: recent_msgs_)
       participant->deliver(msg);
