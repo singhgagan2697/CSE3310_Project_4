@@ -195,15 +195,8 @@ static void cb_quit ( )
 
 static void cb_input1 (Fl_Input*, void * userdata) 
 {
-  chat_message msg;
-  msg.body_length(std::strlen( ( const char *) input1.value ()) + 1);
-  // ensure it is null terminated
-  std::memset (msg.body(), 0, msg.body_length());
-  // copy over the payload
-  std::memcpy (msg.body(), ( const char *) input1.value (), msg.body_length()-1);
-  msg.encode_header();
-  std::cout << "sent " << msg.body() << std::endl;
-  c->write(msg);
+  c->sendtext((const char*) input1.value());
+  std::cout << "sent " << (const char*) input1.value() << std::endl;
   input1.value("");
 }
 

@@ -88,13 +88,17 @@ public:
     //participant->set_uuid(to_string(uuid));
     chat_message testmsg;
     std::string test_data = "simple text";
-    testmsg.body_length(std::strlen(test_data.c_str()));
-    std::memcpy(testmsg.body(), test_data.c_str(), testmsg.body_length());
-    participant->deliver(testmsg);
+    testmsg.body_length(std::strlen(test_data.c_str())+1);
+    std::memset(testmsg.body(), 0, testmsg.body_length());
+    std::memcpy(testmsg.body(), test_data.c_str(), testmsg.body_length()-1);
+    //participant->deliver(testmsg);
+    recent_msgs_.push_back(testmsg);
     //std::cout << "testmsg is ---- " << testmsg.body() << std::endl;
     for (auto msg: recent_msgs_)
+    {
+      std::cout << "in the for loop, the msg is ---- " << msg.body() << std::endl;
       participant->deliver(msg);
-    
+    }
   }
 
   void leave(chat_participant_ptr participant)

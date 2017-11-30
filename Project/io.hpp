@@ -67,8 +67,9 @@ public:
     using namespace boost::posix_time;
     boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
     std::string add_data = to_iso_string(time_local) + "," + msg.body();
-    msg.body_length(std::strlen(add_data.c_str()));
-    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+    msg.body_length(std::strlen(add_data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length()-1);
   }
   
   void add_crc(chat_message& msg)
@@ -79,16 +80,31 @@ public:
     crc = crc32(0L, Z_NULL, 0);
     crc = crc32(crc, (const unsigned char*) msg.body(), msg.body_length());
     std::string add_data = std::to_string(crc) + "," + msg.body();
-    msg.body_length(std::strlen(add_data.c_str()));
-    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
+    msg.body_length(std::strlen(add_data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), add_data.c_str(), msg.body_length()-1);
+  }
+  
+  void sendtext(std::string text)
+  {
+    chat_message msg;
+    std::string data = "SENDTEXT," + text; 
+    msg.body_length(std::strlen(data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
+    add_time(msg);
+    add_crc(msg);
+    msg.encode_header();
+    this->write(msg);
   }
   
   void nick(std::string nick_name)
   {
     chat_message msg;
     std::string data = "NICK," + nick_name; 
-    msg.body_length(std::strlen(data.c_str()));
-    std::memcpy(msg.body(), data.c_str(), msg.body_length());
+    msg.body_length(std::strlen(data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
     add_time(msg);
     add_crc(msg);
     msg.encode_header();
@@ -99,8 +115,9 @@ public:
   {
     chat_message msg;
     std::string data = "REQUUID";
-    msg.body_length(std::strlen(data.c_str()));
-    std::memcpy(msg.body(), data.c_str(), msg.body_length());
+    msg.body_length(std::strlen(data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
     add_time(msg);
     add_crc(msg);
     msg.encode_header();
@@ -173,7 +190,7 @@ private:
         {
           if (!ec)
           {
-            std::cout << i << " read msg body is ---- " << read_msg_.body() << std::endl;
+            std::cout << i << " read msg body is ---- " << read_msg_.body() << " with size ---- " << read_msg_.body_length() << std::endl;
             i++;
             /*std::vector<std::string> tokens = split(read_msg_.body(), ',');
             if((tokens.at(2)).compare("REQUUID") == 0)
