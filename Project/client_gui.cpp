@@ -44,6 +44,7 @@ Fl_Button quit  (800, 10, 40,20,"Quit");
 Fl_Button clear (850, 10, 40,20,"Clear");
 
 Fl_Text_Buffer *buff = new Fl_Text_Buffer ();
+Fl_Text_Buffer *rooms_buff = new Fl_Text_Buffer();
 Fl_Text_Display *rooms = new Fl_Text_Display(10, 60, 150, 335);
 Fl_Text_Display *disp = new Fl_Text_Display (165, 60, 570, 315);
 Fl_Text_Display *nicks = new Fl_Text_Display(740, 60, 150, 335);
@@ -79,16 +80,36 @@ static void cb_recv ( std::string S )
   //
   // high chance of a lock needed here if certain fltk calls
   // are made.  (like show() .... )
-  std::string T = S + '\n' + '\0';
-  if (buff)
+  
+  std::vector<std::string> tokens = c->decode_msg(S);
+  if(tokens.size() > 2)
   {
-    buff->append ( T.c_str () );
-  }
-  if (disp)
-  {
-    disp->show ();
-  }
+    std::cout << "received command --- " << tokens.at(2) << std::endl;
+    if(tokens.at(2).compare("REQCHATROOM") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        rooms_title.value(tokens.at(3).c_str());
+      }
+    }
+    if(tokens.at(2).compare("RECHATROOMS") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        rooms_buff->append((tokens.at(3)).c_str());
+      }
+    }
 
+    std::string T = S + '\n' + '\0';
+    if (buff)
+    {
+      buff->append ( T.c_str () );
+    }
+    if (disp)
+    {
+      disp->show ();
+    }
+  }
   win.show ();
 }
 
@@ -216,6 +237,7 @@ void beginChat(const char *nick_name){
     rooms_title.box(FL_BORDER_BOX);
     win.add(rooms_title);
     rooms->box(FL_BORDER_BOX);
+    rooms->buffer(rooms_buff);
     win.add(rooms);
     win.add(add_room);
     add_room.callback((Fl_Callback*)cb_add_room);

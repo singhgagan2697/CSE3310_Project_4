@@ -124,6 +124,46 @@ public:
     this->write(msg);
   }
 
+  
+  template<typename Out>
+  void split_out(const std::string &s, char delim, Out result)
+  {
+    std::cout << "calling split_out ----- " << s << std::endl;
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+      std::cout << "in while loop" << std::endl;
+      *(result++) = item;
+    }
+  }
+  
+  std::vector<std::string> split(const std::string &data, char delim)
+  {
+    std::cout << "calling split" << std::endl;
+    std::vector<std::string> tokens;
+    split_out(data, delim, std::back_inserter(tokens));
+    return tokens;
+  }
+  
+  std::vector<std::string> decode_msg(std::string message)
+  {
+    i++;
+    std::cout << "decode_msg --- " << message << std::endl;
+    std::vector<std::string> tokens = split(message, ',');
+    if(tokens.size() > 2)
+    {
+      if((tokens.at(2)).compare("REQUUID") == 0)
+      {
+        if(tokens.size() == 4)
+        {
+          this->set_uuid(tokens.at(3));    
+        }
+      }
+    }
+  return tokens;
+  }
+  
 private:
     
   void set_uuid(std::string id)
@@ -160,27 +200,6 @@ private:
           }
         });
   }
-
-  template<typename Out>
-  void split_out(const std::string &s, char delim, Out result)
-  {
-    std::cout << "calling split_out ----- " << s << std::endl;
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim))
-    {
-      std::cout << "in while loop" << std::endl;
-      *(result++) = item;
-    }
-  }
-  
-  std::vector<std::string> split(const std::string &data, char delim)
-  {
-    std::cout << "calling split" << std::endl;
-    std::vector<std::string> tokens;
-    split_out(data, delim, std::back_inserter(tokens));
-    return tokens;
-  }
   
   void do_read_body()
   {
@@ -190,16 +209,6 @@ private:
         {
           if (!ec)
           {
-            std::cout << i << " read msg body is ---- " << read_msg_.body() << " with size ---- " << read_msg_.body_length() << std::endl;
-            i++;
-            /*std::vector<std::string> tokens = split(read_msg_.body(), ',');
-            if((tokens.at(2)).compare("REQUUID") == 0)
-            {
-              if(tokens.size() == 4)
-              {
-                this->set_uuid(tokens.at(3));    
-              }
-            }*/
             std::cout.write(read_msg_.body(), read_msg_.body_length());
             data_recv_ ( read_msg_.body() );
             do_read_header();
