@@ -128,19 +128,16 @@ public:
   template<typename Out>
   void split_out(const std::string &s, char delim, Out result)
   {
-    std::cout << "calling split_out ----- " << s << std::endl;
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim))
     {
-      std::cout << "in while loop" << std::endl;
       *(result++) = item;
     }
   }
   
   std::vector<std::string> split(const std::string &data, char delim)
   {
-    std::cout << "calling split" << std::endl;
     std::vector<std::string> tokens;
     split_out(data, delim, std::back_inserter(tokens));
     return tokens;
@@ -169,7 +166,7 @@ private:
   void set_uuid(std::string id)
   {
     this->uuid = id;
-    std::cout << this->uuid;
+    std::cout << "the uuid is ---" << this->uuid << std::endl;
   }
 
   void do_connect(tcp::resolver::iterator endpoint_iterator)
