@@ -75,11 +75,73 @@ static void cb_quit ( )
 static void cb_input1 (Fl_Input*, void * userdata) 
 {
   chat_message msg;
+/*
   msg.body_length(std::strlen( ( const char *) input1.value ()) + 1);
   // ensure it is null terminated
   std::memset (msg.body(), 0, msg.body_length());
   // copy over the payload
   std::memcpy (msg.body(), ( const char *) input1.value (), msg.body_length()-1);
+*/
+
+// TEST CODE
+// Follow the format of <Checksum>,<Time>,<Command>,<Optional Argument>
+/* 
+  std::string data = "<Checksum>,<Time>,REQUUID";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+/* 
+  std::string data = "<Checksum>,<Time>,NICK,John";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+/*
+  std::string data = "<Checksum>,<Time>,REQCHATROOM";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+/*
+  std::string data = "<Checksum>,<Time>,REQCHATROOMS";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+/*
+// Test1: Create New room called "Room1"
+  std::string data = "<Checksum>,<Time>,NAMECHATROOM,Room1";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+
+// Test2: Change to New room called "Room1".
+  msg.encode_header();
+  std::cout << "sent " << msg.body() << std::endl;
+  c->write(msg);
+*/
+/*
+// Use both Test1 and Test2
+  data = "<Checksum>,<Time>,CHANGECHATROOM,Room1";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+/*
+  std::string data = "<Checksum>,<Time>,SENDTEXT,This is a test";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+
+  msg.encode_header();
+  std::cout << "sent " << msg.body() << std::endl;
+  c->write(msg);
+*/
+/*
+  std::string data = "<Checksum>,<Time>,REQTEXT";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+/*
+  std::string data = "<Checksum>,<Time>,REQUSERS";
+  msg.body_length(std::strlen(data.c_str()));
+  std::memcpy(msg.body(), data.c_str(), msg.body_length());
+*/
+
   msg.encode_header();
   std::cout << "sent " << msg.body() << std::endl;
   c->write(msg);

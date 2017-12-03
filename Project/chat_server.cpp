@@ -8,6 +8,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <stdio.h>
 #include <cstdlib>
 #include <deque>
 #include <iostream>
@@ -26,19 +27,25 @@ typedef std::deque<chat_message> chat_message_queue;
 
 //----------------------------------------------------------------------
 
-int uuid = 1;
-std::set<chat_room> chatrooms;
-
 class chat_participant
 {
 public:
   virtual ~chat_participant() {}
   virtual void deliver(const chat_message& msg) = 0;
+  virtual std::string get_user() 
+  {
+    return "";
+  }
+
 };
 
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
 
 //----------------------------------------------------------------------
+
+
+int uuid = 1;
+
 
 class chat_room
 {
@@ -65,17 +72,71 @@ public:
       participant->deliver(msg);
   }
 
-  void set_name(char name[50])
+  void set_name(std::string name)
   {
-      strcpy(name_, name);
+    name_ = name;
   }
+
+  std::string get_name()
+  {
+    return name_;
+  }
+
+  std::string get_users()
+  {
+    std::string users = "";
+
+    for (auto participant: participants_)
+    {
+      if(users == "")
+      {
+	users = participant->get_user();
+      }
+      else
+      {
+	users+=";" + participant->get_user();
+      }
+    }
+
+    return users;
+  }
+
+  void store_text(std::string text)
+  {
+    text_.insert(text);
+  }
+
+  std::string get_text()
+  {
+    std::string text = "";
+
+    for (auto string: text_)
+    {
+      if(text == "")
+      {
+        text = string;
+      }
+      else
+      {
+        text+=";" + string;
+      }
+    }
+
+    text_.clear();
+    return text;
+  } 
+    
 
 private:
   std::set<chat_participant_ptr> participants_;
   enum { max_recent_msgs = 100 };
   chat_message_queue recent_msgs_;
-  char name_[50];
+
+  std::set<std::string> text_;
+  std::string name_;
 };
+
+std::set<chat_room*> chatrooms;
 
 //----------------------------------------------------------------------
 
@@ -88,7 +149,7 @@ public:
     : socket_(std::move(socket)),
       room_(room)
   {
-      uuid_ = uuid++;
+    uuid_ = uuid++;
   }
 
   void start()
@@ -107,28 +168,12 @@ public:
     }
   }
 
+  std::string get_user()
+  {
+    return std::to_string(uuid_) + " " + nick_;
+  }
+
 private:
-  void add_time(chat_message& msg)
-  {
-    using namespace boost::posix_time;
-    boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
-    std::string add_data = to_iso_string(time_local) + "," + msg.body();
-    msg.body_length(std::strlen(add_data.c_str()));
-    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
-  }
-
-  void add_crc(chat_message& msg)
-  {
-    //Got this part of the code from cksum.cpp
-    unsigned int crc;
-
-    crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, (const unsigned char*) msg.body(), msg.body_length());
-    std::string add_data = std::to_string(crc) + "," + msg.body();
-    msg.body_length(std::strlen(add_data.c_str()));
-    std::memcpy(msg.body(), add_data.c_str(), msg.body_length());
-  }
-
   void do_read_header()
   {
     auto self(shared_from_this());
@@ -138,21 +183,7 @@ private:
         {
           if (!ec && read_msg_.decode_header())
           {
-            if(read_msg_.body() == "REQUUID")
-            {
-                chat_message msg;
-                std::string data = "REQUUID," + uuid_;
-                msg.body_length(std::strlen(data.c_str()));
-                std::memcpy(msg.body(), data.c_str(), msg.body_length());
-                add_time(msg);
-                add_crc(msg);
-                msg.encode_header();
-                deliver(msg);
-            }
-            else
-            {
-                do_read_body();
-            }
+	    do_read_body();
           }
           else
           {
@@ -170,7 +201,148 @@ private:
         {
           if (!ec)
           {
-            room_.deliver(read_msg_);
+  	   // std::cout << "received " << read_msg_.body() << std::endl;
+	    std::string cmd, arg;
+	    char body[512];
+	    strcpy(body, read_msg_.body());
+	
+	    char *token = strtok(body, ",");
+	
+	    int count = 1;
+	    while(token != NULL)
+	    {
+	      if(count == 3)
+	      {
+	        cmd = token;
+	      }
+	      else if(count == 4)
+	      {
+		arg = token;
+		break;
+	      }
+	      token = strtok(NULL, ",");
+	      count++;
+	    }
+/*		
+	    std::cout << "received " << cmd << std::endl;
+	    std::cout << "received " << arg << std::endl;
+*/
+	    if(cmd == "REQUUID")
+	    {
+	      chat_message msg;
+              std::string data = " , ," + cmd + "," + std::to_string(uuid_);
+	      msg.body_length(std::strlen(data.c_str()));     
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+	    }
+	    else if(cmd == "NICK")
+	    {
+	      nick_ = arg;
+	    }
+	    else if(cmd == "REQCHATROOM")
+	    {
+	      std::string room_name = room_.get_name();
+	      chat_message msg;
+              std::string data = " , ," + cmd + "," + room_name;
+	      msg.body_length(std::strlen(data.c_str()));
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+	    }
+	    else if(cmd == "REQCHATROOMS")
+	    {
+	      std::string names = "";
+	      for (auto chat_room: chatrooms)
+	      {
+	        if(names == "")
+		{
+      		  names = chat_room->get_name();
+		}
+		else
+		{
+		  names+=";" + chat_room->get_name();
+		}
+	      }
+
+	      chat_message msg;
+              std::string data = " , ," + cmd + "," + names;
+	      msg.body_length(std::strlen(data.c_str()));
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+	    }
+	    else if(cmd == "NAMECHATROOM")
+	    {
+	      chat_room* chatroom = new chat_room();
+	      chatroom->set_name(arg);
+	      chatrooms.insert(chatroom);
+
+	      chat_message msg;
+              std::string data = " , ," + cmd + "," + arg;
+	      msg.body_length(std::strlen(data.c_str()));
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+	    }
+	    else if(cmd == "CHANGECHATROOM")
+	    {
+	      for (auto chat_room: chatrooms)
+	      {
+	        std::string name = chat_room->get_name();
+	        if(name == arg)
+		{
+		  room_.leave(shared_from_this());
+		  chat_room->join(shared_from_this());
+		  room_ = *chat_room;
+		  
+		  chat_message msg;
+                  std::string data = " , ," + cmd + "," + name;
+	          msg.body_length(std::strlen(data.c_str()));
+	          std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	          msg.encode_header();
+                  deliver(msg);
+      		  break;
+		}
+	      }
+	    }
+	    else if(cmd == "SENDTEXT")
+	    {
+	      chat_message msg;
+              std::string data = " , ," + cmd + "," + std::to_string(arg.length());
+	      msg.body_length(std::strlen(data.c_str()));
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+
+	      room_.store_text(std::to_string(uuid_) + " " + arg);
+	      room_.deliver(read_msg_);
+	    }
+	    else if(cmd == "REQTEXT")
+	    {
+	      std::string text = room_.get_text();
+	      chat_message msg;
+
+              std::string data = " , ," + cmd + "," + text;
+	      msg.body_length(std::strlen(data.c_str()));
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+	    }
+	    else if(cmd == "REQUSERS")
+	    {
+	      chat_message msg;
+	      std::string users = room_.get_users();
+              std::string data = " , ," + cmd + "," + users;
+	      msg.body_length(std::strlen(data.c_str()));
+	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.encode_header();
+              deliver(msg);
+	    }
+	    else
+	    {
+	      room_.deliver(read_msg_);
+	    }
             do_read_header();
           }
           else
@@ -203,11 +375,13 @@ private:
         });
   }
 
-  int uuid_;
   tcp::socket socket_;
   chat_room& room_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
+
+  int uuid_;
+  std::string nick_;
 };
 
 //----------------------------------------------------------------------
@@ -221,7 +395,7 @@ public:
       socket_(io_service)
   {
     do_accept();
-    chatrooms.insert(room_);
+    chatrooms.insert(&room_);
     room_.set_name("The Lobby");
   }
 
@@ -275,3 +449,4 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+

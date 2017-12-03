@@ -1,0 +1,45 @@
+COMMAND FORMAT
+
+REQUUID:
+client_gui sends: <Checksum>,<Time>,REQUUID
+server returns: <Checksum>,<Time>,REQUUID,uuid
+
+
+NICK:
+client_gui sends: <Checksum>,<Time>,NICK,<Nickname>
+server returns: none
+
+
+REQCHATROOM:
+client_gui sends: <Checksum>,<Time>,REQCHATROOM
+server returns: <Checksum>,<Time>,REQCHATROOM,<Chatroom name>
+
+
+REQCHATROOMS:
+client_gui sends: <Checksum>,<Time>,REQCHATROOMS
+server returns: <Checksum>,<Time>,REQCHATROOMS,Chatroom1;Chatroom2;...etc.
+
+
+NAMECHATROOM:
+client_gui sends: <Checksum>,<Time>,NAMECHATROOM,<Chatroom name>
+server returns: <Checksum>,<Time>,NAMECHATROOM,<Chatroom name>
+
+
+CHANGECHATROOM:
+client_gui sends: <Checksum>,<Time>,CHANGECHATROOM,<New Chatroom name>
+server returns: <Checksum>,<Time>,CHANGECHATROOM,<New Chatroom name>
+
+
+SENDTEXT:
+client_gui sends: <Checksum>,<Time>,SENDTEXT,<text>
+server returns: <Checksum>,<Time>,SENDTEXT,<length of text>
+
+
+REQTEXT:
+client_gui sends: <Checksum>,<Time>,REQTEXT
+server returns: <Checksum>,<Time>,REQUUID,<uuid> <text>;<uuid> <text>;...etc.
+
+
+REQUSERS:
+client_gui sends: <Checksum>,<Time>,REQUSERS
+server returns: <Checksum>,<Time>,REQUSERS,<uuid> <Nickname>;<uuid> <Nickname>;...etc.
