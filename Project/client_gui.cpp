@@ -44,6 +44,10 @@ Fl_Button quit  (800, 10, 40,20,"Quit");
 Fl_Button clear (850, 10, 40,20,"Clear");
 
 Fl_Text_Buffer *buff = new Fl_Text_Buffer ();
+<<<<<<< HEAD
+=======
+Fl_Text_Buffer *rooms_buff = new Fl_Text_Buffer();
+>>>>>>> jeet
 Fl_Text_Display *rooms = new Fl_Text_Display(10, 60, 150, 335);
 Fl_Text_Display *disp = new Fl_Text_Display (165, 60, 570, 315);
 Fl_Text_Display *nicks = new Fl_Text_Display(740, 60, 150, 335);
@@ -79,16 +83,48 @@ static void cb_recv ( std::string S )
   //
   // high chance of a lock needed here if certain fltk calls
   // are made.  (like show() .... )
-  std::string T = S + '\n' + '\0';
-  if (buff)
+  
+  std::vector<std::string> tokens = c->decode_msg(S);
+  if(tokens.size() > 2)
   {
-    buff->append ( T.c_str () );
+    std::cout << "received command --- " << tokens.at(2) << std::endl;
+    if(tokens.at(2).compare("REQCHATROOM") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        rooms_title.value(tokens.at(3).c_str());
+      }
+    }
+    else if(tokens.at(2).compare("REQUUID") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        c->set_uuid(tokens.at(3));
+      }
+    }
+    else if(tokens.at(2).compare("RECHATROOMS") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        rooms_buff->append((tokens.at(3)).c_str());
+      }
+    }
+    else if(tokens.at(2).compare("SENDTEXT") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        std::string T = c->get_name() + ": " +tokens.at(2)+ tokens.at(3) + '\n' + '\0';
+        if (buff)
+        {
+          buff->append ( T.c_str () );
+        }
+        if (disp)
+        {
+          disp->show ();
+        }
+      }
+    }
   }
-  if (disp)
-  {
-    disp->show ();
-  }
-
   win.show ();
 }
 
@@ -195,6 +231,7 @@ static void cb_quit ( )
 
 static void cb_input1 (Fl_Input*, void * userdata) 
 {
+<<<<<<< HEAD
   chat_message msg;
   msg.body_length(std::strlen( ( const char *) input1.value ()) + 1);
   // ensure it is null terminated
@@ -204,6 +241,10 @@ static void cb_input1 (Fl_Input*, void * userdata)
   msg.encode_header();
   std::cout << "sent " << msg.body() << std::endl;
   c->write(msg);
+=======
+  c->sendtext((const char*) input1.value());
+  std::cout << "sent " << (const char*) input1.value() << std::endl;
+>>>>>>> jeet
   input1.value("");
 }
 
@@ -223,6 +264,10 @@ void beginChat(const char *nick_name){
     rooms_title.box(FL_BORDER_BOX);
     win.add(rooms_title);
     rooms->box(FL_BORDER_BOX);
+<<<<<<< HEAD
+=======
+    rooms->buffer(rooms_buff);
+>>>>>>> jeet
     win.add(rooms);
     win.add(add_room);
     add_room.callback((Fl_Callback*)cb_add_room);
@@ -269,6 +314,7 @@ void beginChat(const char *nick_name){
 //Callbacks
 static void cb_submit(){
   const char * nick_name = nick.value();
+<<<<<<< HEAD
   beginChat(nick_name);
   win1.hide();
 }
@@ -300,6 +346,42 @@ void beginLogin(){
 
 
 
+=======
+  c->nick(std::string(nick_name, std::strlen(nick_name)));
+  c->set_name(nick_name);
+  c->requuid();
+  beginChat(nick_name);
+  win1.hide();
+}
+
+//Begin
+void beginLogin(){
+  win1.color(FL_WHITE);
+  win1.begin();
+    welcome.value("  Welcome To UberChat");
+    welcome.textsize(40);
+    welcome.box(FL_BORDER_BOX);
+    win1.add(welcome);
+    welcome2.value("The new way to communicate");
+    welcome2.textsize(20);
+    welcome2.box(FL_NO_BOX);
+    win1.add(welcome2);
+    win1.add(nick);
+    nick_disc.value("Enter a nick name to get started");
+    nick_disc.box(FL_NO_BOX);
+    win1.add(nick_disc);
+    nick.callback((Fl_Callback *)cb_submit, (void*) "Enter nick:");
+    nick.when(FL_WHEN_ENTER_KEY);
+    win1.add(submit);
+    submit.callback((Fl_Callback *)cb_submit);
+    win1.add(mod_button);
+  win1.end();
+  win1.show();
+}
+
+
+
+>>>>>>> jeet
 int main ( int argc, char **argv) 
 {
   beginLogin();

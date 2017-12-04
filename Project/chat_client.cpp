@@ -49,6 +49,8 @@ public:
     io_service_.post([this]() { socket_.close(); });
   }
 
+  
+
 private:
   void do_connect(tcp::resolver::iterator endpoint_iterator)
   {
@@ -125,6 +127,7 @@ private:
   tcp::socket socket_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
+  std::string participant_name;
 };
 
 int main(int argc, char* argv[])
