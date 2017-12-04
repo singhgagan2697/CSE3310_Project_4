@@ -33,6 +33,7 @@ Fl_Window win   	(900, 405, "UberChat");
 Fl_Output welcome_nick	(10, 10, 150, 20);
 Fl_Button mod   	(690, 10, 80, 20, "Moderator");
 Fl_Output rooms_title 	(10, 40, 150, 20);
+Fl_Button change_room (15, 380, 120, 13, "Change Rooms");
 Fl_Button add_room 	(140, 380, 18, 13, "+");
 Fl_Output chat_title	(165, 40, 570, 20);
 Fl_Button delet 	(675, 42, 58, 16, "Delete");
@@ -45,6 +46,7 @@ Fl_Button clear (850, 10, 40,20,"Clear");
 
 Fl_Text_Buffer *buff = new Fl_Text_Buffer ();
 Fl_Text_Buffer *rooms_buff = new Fl_Text_Buffer();
+Fl_Text_Buffer *nick_buff = new Fl_Text_Buffer();
 Fl_Text_Display *rooms = new Fl_Text_Display(10, 60, 150, 335);
 Fl_Text_Display *disp = new Fl_Text_Display (165, 60, 570, 315);
 Fl_Text_Display *nicks = new Fl_Text_Display(740, 60, 150, 335);
@@ -66,6 +68,12 @@ Fl_Menu_Button select_action(10, 90, 330, 30, "Action: ");
 Fl_Button do_action	(130, 200, 100, 40, "Submit");
 Fl_Button cancel_action (240, 200, 100, 40, "Cancel");
 
+
+//Screen 5-----------------------------------
+Fl_Window win5		(300, 200, "Change to a Room");
+Fl_Input change_room_name	(100, 20, 190, 50, "Chat Room Name: ");
+Fl_Button change	(30, 100, 100, 50, "Change");
+Fl_Button cancel_change (170, 100, 100, 50, "Cancel");
 
 // boost asio instances
 
@@ -101,16 +109,22 @@ static void cb_recv ( std::string S )
     }
     else if(tokens.at(2).compare("RECHATROOMS") == 0)
     {
-      if(tokens.size() == 4)
+      if(tokens.size() >= 4)
       {
-        rooms_buff->append((tokens.at(3)).c_str());
+        std::string data = "";
+        for(unsigned int i = 3; i < tokens.size(); i++)
+        {
+          data = data + tokens.at(i) + "\n";
+        }
+        data = data + "\0";
+        rooms_buff->append(data.c_str());
       }
     }
     else if(tokens.at(2).compare("SENDTEXT") == 0)
     {
       if(tokens.size() == 4)
       {
-        std::string T = c->get_name() + ": " +tokens.at(2)+ tokens.at(3) + '\n' + '\0';
+        std::string T = c->get_name() + ": " + tokens.at(3) + '\n' + '\0';
         if (buff)
         {
           buff->append ( T.c_str () );
@@ -121,8 +135,49 @@ static void cb_recv ( std::string S )
         }
       }
     }
+    else if(tokens.at(2).compare("REQUSERS")==0)
+    {
+      if(tokens.size() >= 4)
+      {
+        std::string data = "";
+        for(unsigned int i = 3; i < tokens.size(); i++)
+        {
+          data = data + tokens.at(i) + "\n";
+        }
+        data = data + "\0";
+        nick_buff->append(data.c_str());
+      }
+    }
   }
   win.show ();
+}
+
+//SCREEN 5 ----------------------------------------------
+
+//Callback
+static void cb_change(){
+  std::string data = change_room_name.value();
+  c->changechatroom(data);
+  win5.hide();
+}
+
+static void cb_cancel_change(){
+  change_room_name.value("");
+  win5.hide();
+}
+
+//Begin
+
+void begin_change_room(){
+  win5.begin();
+    win5.color(FL_WHITE);
+    win5.add(change_room_name);
+    win5.add(change);
+    change.callback((Fl_Callback*)cb_change);
+    win5.add(cancel_change);
+    cancel_change.callback((Fl_Callback*)cb_cancel_change);
+  win5.end();
+  win5.show();
 }
 
 //SCREEN 4 -----------------------------------------------
@@ -233,6 +288,10 @@ static void cb_input1 (Fl_Input*, void * userdata)
   input1.value("");
 }
 
+static void cb_change_room()
+{
+  begin_change_room();
+}
 
 //Begin
 void beginChat(const char *nick_name){
@@ -251,6 +310,8 @@ void beginChat(const char *nick_name){
     rooms->box(FL_BORDER_BOX);
     rooms->buffer(rooms_buff);
     win.add(rooms);
+    win.add(change_room);
+    change_room.callback((Fl_Callback*) cb_change_room);
     win.add(add_room);
     add_room.callback((Fl_Callback*)cb_add_room);
 
@@ -282,6 +343,7 @@ void beginChat(const char *nick_name){
     win.add(nicks_title);
     nicks->box(FL_BORDER_BOX);
     win.add(nicks);
+    nicks->buffer(nick_buff);
     clear.callback (( Fl_Callback*) cb_clear );
     win.add(clear);
     quit.callback (( Fl_Callback*) cb_quit );
@@ -299,6 +361,7 @@ static void cb_submit(){
   c->nick(std::string(nick_name, std::strlen(nick_name)));
   c->set_name(nick_name);
   c->requuid();
+  c->changechatroom("lobby");
   beginChat(nick_name);
   win1.hide();
 }

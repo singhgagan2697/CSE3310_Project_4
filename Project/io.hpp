@@ -62,38 +62,34 @@ public:
     io_service_.post([this]() { socket_.close(); });
   }
 
-  void add_time(chat_message& msg)
+  std::string get_time()
   {
     using namespace boost::posix_time;
     boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
-    std::string add_data = to_iso_string(time_local) + "," + msg.body();
-    msg.body_length(std::strlen(add_data.c_str())+1);
-    std::memset(msg.body(), 0, msg.body_length());
-    std::memcpy(msg.body(), add_data.c_str(), msg.body_length()-1);
+    return to_iso_string(time_local); 
   }
   
-  void add_crc(chat_message& msg)
+  std::string get_crc(const char *data, int length)
   {
     //Got this part of the code from cksum.cpp 
     unsigned int crc;
     
     crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, (const unsigned char*) msg.body(), msg.body_length());
-    std::string add_data = std::to_string(crc) + "," + msg.body();
-    msg.body_length(std::strlen(add_data.c_str())+1);
-    std::memset(msg.body(), 0, msg.body_length());
-    std::memcpy(msg.body(), add_data.c_str(), msg.body_length()-1);
+    
+    crc = crc32(crc, (const unsigned char*) data, length);
+    return std::to_string(crc);
   }
   
   void sendtext(std::string text)
   {
     chat_message msg;
     std::string data = "SENDTEXT," + text; 
+    std::string time = get_time();
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    data = crc + "," + time + "," + data;
     msg.body_length(std::strlen(data.c_str())+1);
     std::memset(msg.body(), 0, msg.body_length());
     std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
-    add_time(msg);
-    add_crc(msg);
     msg.encode_header();
     this->write(msg);
   }
@@ -101,12 +97,13 @@ public:
   void nick(std::string nick_name)
   {
     chat_message msg;
-    std::string data = "NICK," + nick_name; 
+    std::string data = "NICK," + nick_name;
+    std::string time = get_time();
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    data = crc + "," + time + "," + data; 
     msg.body_length(std::strlen(data.c_str())+1);
     std::memset(msg.body(), 0, msg.body_length());
     std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
-    add_time(msg);
-    add_crc(msg);
     msg.encode_header();
     this->write(msg);
   }
@@ -115,15 +112,43 @@ public:
   {
     chat_message msg;
     std::string data = "REQUUID";
+    std::string time = get_time();
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    data = crc + "," + time + "," + data; 
     msg.body_length(std::strlen(data.c_str())+1);
     std::memset(msg.body(), 0, msg.body_length());
     std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
-    add_time(msg);
-    add_crc(msg);
     msg.encode_header();
     this->write(msg);
   }
 
+  void namechatroom(std::string room_name)
+  {
+    chat_message msg;
+    std::string data = "NAMECHATROOM," + room_name;
+    std::string time = get_time();
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    data = crc + "," + time + "," + data; 
+    msg.body_length(std::strlen(data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
+    msg.encode_header();
+    this->write(msg);
+  }
+  
+  void changechatroom(std::string room_name)
+  {
+    chat_message msg;
+    std::string data = "CHANGECHATROOM," + room_name;
+    std::string time = get_time();
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    data = crc + "," + time + "," + data; 
+    msg.body_length(std::strlen(data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
+    msg.encode_header();
+    this->write(msg);
+  }
   
   template<typename Out>
   void split_out(const std::string &s, char delim, Out result)
