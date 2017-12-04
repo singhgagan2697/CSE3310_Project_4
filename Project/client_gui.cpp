@@ -47,7 +47,7 @@ Fl_Button clear (850, 10, 40,20,"Clear");
 Fl_Text_Buffer *buff = new Fl_Text_Buffer ();
 Fl_Text_Buffer *rooms_buff = new Fl_Text_Buffer();
 Fl_Text_Buffer *nick_buff = new Fl_Text_Buffer();
-Fl_Text_Display *rooms = new Fl_Text_Display(10, 60, 150, 335);
+Fl_Text_Display *rooms = new Fl_Text_Display(10, 60, 150, 315);
 Fl_Text_Display *disp = new Fl_Text_Display (165, 60, 570, 315);
 Fl_Text_Display *nicks = new Fl_Text_Display(740, 60, 150, 335);
 
@@ -108,7 +108,7 @@ static void cb_recv ( std::string S )
         c->set_uuid(tokens.at(3));
       }
     }
-    else if(tokens.at(2).compare("RECHATROOMS") == 0)
+    else if(tokens.at(2).compare("REQCHATROOMS") == 0)
     {
       if(tokens.size() >= 4)
       {
@@ -133,6 +133,26 @@ static void cb_recv ( std::string S )
         if (disp)
         {
           disp->show ();
+        }
+      }
+    }
+    else if(tokens.at(2).compare("REQTEXT") == 0)
+    {
+      if(tokens.size() >= 4)
+      {
+        std::string data = "";
+        for(unsigned int i = 3; i < tokens.size(); i++)
+        {
+          data = data + tokens.at(i) + "\n";
+        }
+        data = data + "\0";
+        if(buff)
+        {
+          buff->text(data.c_str());
+        }
+        if(disp)
+        {
+          disp->show();
         }
       }
     }
@@ -278,6 +298,13 @@ static void cb_quit ( )
   // this is where we exit to the operating system
   // any clean up needs to happen here
   //
+  
+  win1.hide();
+  win.hide();
+  win3.hide();
+  win4.hide();
+  win5.hide();
+  
   if (c)
   {
     c->close();
@@ -371,8 +398,9 @@ static void cb_submit(){
   c->nick(std::string(nick_name, std::strlen(nick_name)));
   c->set_name(nick_name);
   c->requuid();
-  c->changechatroom("The Lobby");
   beginChat(nick_name);
+  c->changechatroom("The Lobby");
+  c->reqchatrooms();
   win1.hide();
 }
 
