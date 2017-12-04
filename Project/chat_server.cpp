@@ -49,9 +49,6 @@ typedef std::shared_ptr<chat_participant> chat_participant_ptr;
 //----------------------------------------------------------------------
 
 
-int uuid = 1;
-
-
 class chat_room
 {
 public:
@@ -154,7 +151,7 @@ public:
     : socket_(std::move(socket)),
       room_(room)
   {
-    uuid_ = uuid++;
+    uuid_ = boost::uuids::random_generator()();
   }
 
   void start()
@@ -175,7 +172,7 @@ public:
 
   std::string get_user()
   {
-    return std::to_string(uuid_) + " " + nick_;
+    return to_string(uuid_) + " " + nick_;
   }
 
 private:
@@ -253,17 +250,12 @@ private:
 	    if(cmd == "REQUUID")
 	    {
 	      chat_message msg;
-              std::string body = cmd + "," + std::to_string(uuid_);
+        std::string body = cmd + "," + to_string(uuid_);
 	      std::string data = get_body(body);
-/*
-	      std::string time = get_time();
-	      std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
-	      std::string data = crc + "," + time + "," + body;
-*/
 	      msg.body_length(std::strlen(data.c_str()));     
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
-              deliver(msg);
+        deliver(msg);
 	    }
 	    else if(cmd == "NICK")
 	    {
@@ -346,15 +338,14 @@ private:
 	    else if(cmd == "SENDTEXT")
 	    {
 	      chat_message msg;
-              std::string body = cmd + "," + std::to_string(arg.length());
+        std::string body = cmd + "," + std::to_string(arg.length());
 	      std::string data = get_body(body);
-
 	      msg.body_length(std::strlen(data.c_str()));
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
-              deliver(msg);
-
-	      room_.store_text(std::to_string(uuid_) + " " + arg);
+        deliver(msg);
+        
+	      room_.store_text(to_string(uuid_) + " " + arg);
 	      room_.deliver(read_msg_);
 	    }
 	    else if(cmd == "REQTEXT")
@@ -432,7 +423,7 @@ private:
   chat_message read_msg_;
   chat_message_queue write_msgs_;
 
-  int uuid_;
+  boost::uuids::uuid uuid_;
   std::string nick_;
 };
 

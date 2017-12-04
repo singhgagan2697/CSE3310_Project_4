@@ -146,28 +146,28 @@ public:
   std::vector<std::string> decode_msg(std::string message)
   {
     i++;
-    std::cout << "decode_msg --- " << message << std::endl;
     std::vector<std::string> tokens = split(message, ',');
-    if(tokens.size() > 2)
-    {
-      if((tokens.at(2)).compare("REQUUID") == 0)
-      {
-        if(tokens.size() == 4)
-        {
-          this->set_uuid(tokens.at(3));    
-        }
-      }
-    }
-  return tokens;
+    return tokens;
   }
   
-private:
-    
+  void set_name(std::string name)
+  {
+    this->participant_name = name;
+  }
+  
+  std::string get_name()
+  {
+    return this->participant_name;
+  }
+      
   void set_uuid(std::string id)
   {
     this->uuid = id;
     std::cout << "the uuid is ---" << this->uuid << std::endl;
   }
+  
+private:
+
 
   void do_connect(tcp::resolver::iterator endpoint_iterator)
   {

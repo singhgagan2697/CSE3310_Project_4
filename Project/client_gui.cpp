@@ -92,22 +92,34 @@ static void cb_recv ( std::string S )
         rooms_title.value(tokens.at(3).c_str());
       }
     }
-    if(tokens.at(2).compare("RECHATROOMS") == 0)
+    else if(tokens.at(2).compare("REQUUID") == 0)
+    {
+      if(tokens.size() == 4)
+      {
+        c->set_uuid(tokens.at(3));
+      }
+    }
+    else if(tokens.at(2).compare("RECHATROOMS") == 0)
     {
       if(tokens.size() == 4)
       {
         rooms_buff->append((tokens.at(3)).c_str());
       }
     }
-
-    std::string T = S + '\n' + '\0';
-    if (buff)
+    else if(tokens.at(2).compare("SENDTEXT") == 0)
     {
-      buff->append ( T.c_str () );
-    }
-    if (disp)
-    {
-      disp->show ();
+      if(tokens.size() == 4)
+      {
+        std::string T = c->get_name() + ": " +tokens.at(2)+ tokens.at(3) + '\n' + '\0';
+        if (buff)
+        {
+          buff->append ( T.c_str () );
+        }
+        if (disp)
+        {
+          disp->show ();
+        }
+      }
     }
   }
   win.show ();
@@ -285,6 +297,7 @@ void beginChat(const char *nick_name){
 static void cb_submit(){
   const char * nick_name = nick.value();
   c->nick(std::string(nick_name, std::strlen(nick_name)));
+  c->set_name(nick_name);
   c->requuid();
   beginChat(nick_name);
   win1.hide();
