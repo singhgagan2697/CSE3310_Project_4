@@ -252,8 +252,9 @@ private:
 	      chat_message msg;
         std::string body = cmd + "," + to_string(uuid_);
 	      std::string data = get_body(body);
-	      msg.body_length(std::strlen(data.c_str()));     
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
         deliver(msg);
 	    }
@@ -267,9 +268,9 @@ private:
 	      chat_message msg;
               std::string body = cmd + "," + room_name;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
               deliver(msg);
 	    }
@@ -289,11 +290,11 @@ private:
 	      }
 
 	      chat_message msg;
-              std::string body = cmd + "," + names;
+        std::string body = cmd + "," + names;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
               deliver(msg);
 	    }
@@ -306,9 +307,9 @@ private:
 	      chat_message msg;
               std::string body = cmd + "," + arg;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
               deliver(msg);
 	    }
@@ -326,9 +327,9 @@ private:
 		  chat_message msg;
                   std::string body = cmd + "," + name;
    	   	  std::string data = get_body(body);
-
-	          msg.body_length(std::strlen(data.c_str()));
-	          std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	          msg.body_length(std::strlen(data.c_str())+1);
+            std::memset(msg.body(), 0, msg.body_length());
+	          std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	          msg.encode_header();
                   deliver(msg);
       		  break;
@@ -337,13 +338,14 @@ private:
 	    }
 	    else if(cmd == "SENDTEXT")
 	    {
-	      chat_message msg;
-        std::string body = cmd + "," + std::to_string(arg.length());
+        arg = nick_ + ": " + arg;
+        std::string body = cmd + "," + arg + "," + std::to_string(arg.length());
 	      std::string data = get_body(body);
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
-	      msg.encode_header();
-        deliver(msg);
+	      read_msg_.body_length(std::strlen(data.c_str())+1);
+        std::memset(read_msg_.body(), 0, read_msg_.body_length()); 
+	      std::memcpy(read_msg_.body(), data.c_str(), read_msg_.body_length()-1);
+	      read_msg_.encode_header();
+              //deliver(msg);
         
 	      room_.store_text(to_string(uuid_) + " " + arg);
 	      room_.deliver(read_msg_);
@@ -355,9 +357,9 @@ private:
 
               std::string body = cmd + "," + text;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
               deliver(msg);
 	    }
@@ -367,9 +369,9 @@ private:
 	      std::string users = room_.get_users();
               std::string body = cmd + "," + users;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
               deliver(msg);
 	    }
@@ -492,4 +494,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

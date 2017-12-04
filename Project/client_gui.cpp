@@ -97,7 +97,8 @@ static void cb_recv ( std::string S )
     {
       if(tokens.size() == 4)
       {
-        rooms_title.value(tokens.at(3).c_str());
+        std::string data = tokens.at(3) + "\0";
+        chat_title.value(data.c_str());
       }
     }
     else if(tokens.at(2).compare("REQUUID") == 0)
@@ -122,9 +123,9 @@ static void cb_recv ( std::string S )
     }
     else if(tokens.at(2).compare("SENDTEXT") == 0)
     {
-      if(tokens.size() == 4)
+      if(tokens.size() >= 4)
       {
-        std::string T = c->get_name() + ": " + tokens.at(3) + '\n' + '\0';
+        std::string T = tokens.at(3) + '\n' + '\0';
         if (buff)
         {
           buff->append ( T.c_str () );
@@ -146,6 +147,15 @@ static void cb_recv ( std::string S )
         }
         data = data + "\0";
         nick_buff->append(data.c_str());
+      }
+    }
+    else if(tokens.at(2).compare("CHANGECHATROOM")==0)
+    {
+      if(tokens.size() == 4)
+      {
+        std::string data = tokens.at(3) + "\0";
+        std::cout << "change chat room data is --- " << tokens.at(3) << std::endl;
+        chat_title.value(data.c_str());
       }
     }
   }
@@ -361,7 +371,7 @@ static void cb_submit(){
   c->nick(std::string(nick_name, std::strlen(nick_name)));
   c->set_name(nick_name);
   c->requuid();
-  c->changechatroom("lobby");
+  c->changechatroom("The Lobby");
   beginChat(nick_name);
   win1.hide();
 }

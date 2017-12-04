@@ -172,6 +172,7 @@ public:
   {
     i++;
     std::vector<std::string> tokens = split(message, ',');
+    tokens.at(tokens.size()-1) = tokens.at(tokens.size()-1) + "\0";
     return tokens;
   }
   
@@ -188,7 +189,6 @@ public:
   void set_uuid(std::string id)
   {
     this->uuid = id;
-    std::cout << "the uuid is ---" << this->uuid << std::endl;
   }
   
 private:
@@ -232,6 +232,7 @@ private:
           if (!ec)
           {
             std::cout.write(read_msg_.body(), read_msg_.body_length());
+            std::cout << std::endl;
             data_recv_ ( read_msg_.body() );
             do_read_header();
           }
