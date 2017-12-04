@@ -16,7 +16,12 @@
 #include <memory>
 #include <set>
 #include <utility>
+#include <zlib.h>
 #include <boost/asio.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/date_time.hpp>
 #include "chat_message.hpp"
 
 using boost::asio::ip::tcp;
@@ -42,9 +47,6 @@ public:
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
 
 //----------------------------------------------------------------------
-
-
-int uuid = 1;
 
 
 class chat_room
@@ -149,7 +151,7 @@ public:
     : socket_(std::move(socket)),
       room_(room)
   {
-    uuid_ = uuid++;
+    uuid_ = boost::uuids::random_generator()();
   }
 
   void start()
@@ -170,10 +172,28 @@ public:
 
   std::string get_user()
   {
-    return std::to_string(uuid_) + " " + nick_;
+    return to_string(uuid_) + " " + nick_;
   }
 
 private:
+  std::string get_time()
+  {
+    using namespace boost::posix_time;
+    boost::posix_time::ptime time_local = boost::posix_time::second_clock::local_time();
+    return to_iso_string(time_local); 
+  }
+  
+  std::string get_crc(const char *data, int length)
+  {
+    //Got this part of the code from cksum.cpp 
+    unsigned int crc;
+    
+    crc = crc32(0L, Z_NULL, 0);
+    
+    crc = crc32(crc, (const unsigned char*) data, length);
+    return std::to_string(crc);
+  }
+
   void do_read_header()
   {
     auto self(shared_from_this());
@@ -230,11 +250,12 @@ private:
 	    if(cmd == "REQUUID")
 	    {
 	      chat_message msg;
-              std::string data = " , ," + cmd + "," + std::to_string(uuid_);
+        std::string body = cmd + "," + to_string(uuid_);
+	      std::string data = get_body(body);
 	      msg.body_length(std::strlen(data.c_str()));     
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
-              deliver(msg);
+        deliver(msg);
 	    }
 	    else if(cmd == "NICK")
 	    {
@@ -244,7 +265,9 @@ private:
 	    {
 	      std::string room_name = room_.get_name();
 	      chat_message msg;
-              std::string data = " , ," + cmd + "," + room_name;
+              std::string body = cmd + "," + room_name;
+	      std::string data = get_body(body);
+
 	      msg.body_length(std::strlen(data.c_str()));
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
@@ -266,7 +289,9 @@ private:
 	      }
 
 	      chat_message msg;
-              std::string data = " , ," + cmd + "," + names;
+              std::string body = cmd + "," + names;
+	      std::string data = get_body(body);
+
 	      msg.body_length(std::strlen(data.c_str()));
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
@@ -279,7 +304,9 @@ private:
 	      chatrooms.insert(chatroom);
 
 	      chat_message msg;
-              std::string data = " , ," + cmd + "," + arg;
+              std::string body = cmd + "," + arg;
+	      std::string data = get_body(body);
+
 	      msg.body_length(std::strlen(data.c_str()));
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
@@ -297,7 +324,9 @@ private:
 		  room_ = *chat_room;
 		  
 		  chat_message msg;
-                  std::string data = " , ," + cmd + "," + name;
+                  std::string body = cmd + "," + name;
+   	   	  std::string data = get_body(body);
+
 	          msg.body_length(std::strlen(data.c_str()));
 	          std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	          msg.encode_header();
@@ -308,14 +337,14 @@ private:
 	    }
 	    else if(cmd == "SENDTEXT")
 	    {
-	      chat_message msg;
-              std::string data = " , ," + cmd + "," + std::to_string(arg.length());
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
-	      msg.encode_header();
-              deliver(msg);
-
-	      room_.store_text(std::to_string(uuid_) + " " + arg);
+              std::string body = cmd + "," + arg + "," + std::to_string(arg.length());
+	      std::string data = get_body(body);
+	      read_msg_.body_length(std::strlen(data.c_str()));
+	      std::memcpy(read_msg_.body(), data.c_str(), read_msg_.body_length());
+	      read_msg_.encode_header();
+              //deliver(msg);
+        
+	      room_.store_text(to_string(uuid_) + " " + arg);
 	      room_.deliver(read_msg_);
 	    }
 	    else if(cmd == "REQTEXT")
@@ -323,7 +352,9 @@ private:
 	      std::string text = room_.get_text();
 	      chat_message msg;
 
-              std::string data = " , ," + cmd + "," + text;
+              std::string body = cmd + "," + text;
+	      std::string data = get_body(body);
+
 	      msg.body_length(std::strlen(data.c_str()));
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
@@ -333,7 +364,9 @@ private:
 	    {
 	      chat_message msg;
 	      std::string users = room_.get_users();
-              std::string data = " , ," + cmd + "," + users;
+              std::string body = cmd + "," + users;
+	      std::string data = get_body(body);
+
 	      msg.body_length(std::strlen(data.c_str()));
 	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
 	      msg.encode_header();
@@ -350,6 +383,15 @@ private:
             room_.leave(shared_from_this());
           }
         });
+  }
+
+  std::string get_body(std::string body)
+  {
+    std::string time = get_time();
+    std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
+    std::string data = crc + "," + time + "," + body;
+
+    return data;
   }
 
   void do_write()
@@ -380,7 +422,7 @@ private:
   chat_message read_msg_;
   chat_message_queue write_msgs_;
 
-  int uuid_;
+  boost::uuids::uuid uuid_;
   std::string nick_;
 };
 
