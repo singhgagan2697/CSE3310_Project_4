@@ -118,7 +118,7 @@ static void cb_recv ( std::string S )
           data = data + tokens.at(i) + "\n";
         }
         data = data + "\0";
-        rooms_buff->append(data.c_str());
+        rooms_buff->text(data.c_str());
       }
     }
     else if(tokens.at(2).compare("SENDTEXT") == 0)
@@ -161,12 +161,12 @@ static void cb_recv ( std::string S )
       if(tokens.size() >= 4)
       {
         std::string data = "";
-        for(unsigned int i = 3; i < tokens.size(); i++)
+        for(unsigned int i = 4; i < tokens.size(); i = i+2)
         {
           data = data + tokens.at(i) + "\n";
         }
         data = data + "\0";
-        nick_buff->append(data.c_str());
+        nick_buff->text(data.c_str());
       }
     }
     else if(tokens.at(2).compare("CHANGECHATROOM")==0)
@@ -244,6 +244,12 @@ void begin_mod_action(){
 
 //Calback
 void cb_create(){
+  if(std::string(room_name.value()).compare("") != 0)
+  {
+    c->namechatroom(room_name.value());
+    c->changechatroom(room_name.value());
+    c->reqchatrooms();
+  }
   win3.hide();
 }
 
@@ -401,6 +407,7 @@ static void cb_submit(){
   beginChat(nick_name);
   c->changechatroom("The Lobby");
   c->reqchatrooms();
+  c->requsers();
   win1.hide();
 }
 

@@ -178,6 +178,20 @@ public:
     this->write(msg);
   }
   
+  void requsers()
+  {
+    chat_message msg;
+    std::string data = "REQUSERS";
+    std::string time = get_time();
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    data = crc + "," + time + "," + data; 
+    msg.body_length(std::strlen(data.c_str())+1);
+    std::memset(msg.body(), 0, msg.body_length());
+    std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
+    msg.encode_header();
+    this->write(msg);
+  }
+  
   template<typename Out>
   void split_out(const std::string &s, char delim, Out result)
   {
