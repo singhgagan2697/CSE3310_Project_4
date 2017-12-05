@@ -214,6 +214,16 @@ public:
   {
     i++;
     std::vector<std::string> tokens = split(message, ',');
+    std::string data = tokens.at(2);
+    for(unsigned int i = 3; i < tokens.size(); i++)
+    {
+      data += "," + tokens.at(i);
+    }
+    std::string crc = get_crc(data.c_str(), std::strlen(data.c_str()));
+    if(tokens.at(0).compare(crc) != 0)
+    {
+      tokens.at(2) = "WRONGCRC";
+    }
     tokens.at(tokens.size()-1) = tokens.at(tokens.size()-1) + "\0";
     return tokens;
   }
