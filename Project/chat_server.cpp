@@ -127,7 +127,9 @@ public:
     text_.clear();
     return text;
   } 
-    
+   
+ 
+  int count_ = 0;
 
 private:
   std::set<chat_participant_ptr> participants_;
@@ -148,15 +150,17 @@ class chat_session
 {
 public:
   chat_session(tcp::socket socket, chat_room& room)
-    : socket_(std::move(socket)),
-      room_(room)
+    : socket_(std::move(socket))
+      //*room_(room)
   {
     uuid_ = boost::uuids::random_generator()();
+    //(*curr_room_) = room_;
+    room_ = &room;
   }
 
   void start()
   {
-    room_.join(shared_from_this());
+    (*room_).join(shared_from_this());
     do_read_header();
   }
 
@@ -207,7 +211,7 @@ private:
           }
           else
           {
-            room_.leave(shared_from_this());
+            (*room_).leave(shared_from_this());
           }
         });
   }
@@ -264,7 +268,7 @@ private:
 	    }
 	    else if(cmd == "REQCHATROOM")
 	    {
-	      std::string room_name = room_.get_name();
+	      std::string room_name = (*room_).get_name();
 	      chat_message msg;
         std::string body = cmd + "," + room_name;
 	      std::string data = get_body(body);
@@ -300,18 +304,40 @@ private:
 	    }
 	    else if(cmd == "NAMECHATROOM")
 	    {
-	      chat_room* chatroom = new chat_room();
-	      chatroom->set_name(arg);
-	      chatrooms.insert(chatroom);
+	      bool found = false;
+	      for (auto chat_room: chatrooms)
+	      {
+	        std::string name = chat_room->get_name();
+	        if(strcmp(name.c_str(), arg.c_str()) == 0)
+		{
+		  found = true;
+		  break;
+		}
+	      }
 
-	      chat_message msg;
-        std::string body = cmd + "," + arg;
-	      std::string data = get_body(body);
-	      msg.body_length(std::strlen(data.c_str())+1);
-        std::memset(msg.body(), 0, msg.body_length());
-        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
-	      msg.encode_header();
-        room_.deliver(msg);
+	      if(!found)
+	      {
+	        chat_room* chatroom = new chat_room();
+	        chatroom->set_name(arg);
+	        chatrooms.insert(chatroom);
+
+	        chat_message msg;
+                std::string body = cmd + "," + arg;
+	        std::string data = get_body(body);
+	        msg.body_length(std::strlen(data.c_str())+1);
+                std::memset(msg.body(), 0, msg.body_length());
+                std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
+	        msg.encode_header();
+                (*room_).deliver(msg);
+/*
+	      for (auto chat_room: chatrooms)
+	      {
+	        std::string name = chat_room->get_name();
+	        std::cout << name << (*room_).count_ << std::endl; 
+	      }
+	      std::cout << "Default:" << (*room_).get_name() << (*room_).count_ << std::endl;
+*/
+	      }
 	    }
 	    else if(cmd == "CHANGECHATROOM")
 	    {
@@ -320,9 +346,9 @@ private:
 	        std::string name = chat_room->get_name();
 	        if(name == arg)
 		      {
-            room_.leave(shared_from_this());
+            (*room_).leave(shared_from_this());
             chat_room->join(shared_from_this());
-            room_ = *chat_room;
+            room_ = chat_room;
 
             chat_message msg;
             std::string body = cmd + "," + name;
@@ -345,12 +371,12 @@ private:
         std::memset(read_msg_.body(), 0, read_msg_.body_length()); 
 	      std::memcpy(read_msg_.body(), data.c_str(), read_msg_.body_length()-1);
 	      read_msg_.encode_header();       
-	      room_.store_text(to_string(uuid_) + " " + arg);
-	      room_.deliver(read_msg_);
+	      (*room_).store_text(to_string(uuid_) + " " + arg);
+	      (*room_).deliver(read_msg_);
 	    }
 	    else if(cmd == "REQTEXT")
 	    {
-	      std::string text = room_.get_text();
+	      std::string text = (*room_).get_text();
 	      chat_message msg;
         std::string body = cmd + "," + text;
 	      std::string data = get_body(body);
@@ -363,24 +389,24 @@ private:
 	    else if(cmd == "REQUSERS")
 	    {
 	      chat_message msg;
-	      std::string users = room_.get_users();
+	      std::string users = (*room_).get_users();
         std::string body = cmd + "," + users;
 	      std::string data = get_body(body);
 	      msg.body_length(std::strlen(data.c_str())+1);
         std::memset(msg.body(), 0, msg.body_length());
         std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
-        room_.deliver(msg);
+        (*room_).deliver(msg);
 	    }
 	    else
 	    {
-	      room_.deliver(read_msg_);
+	      (*room_).deliver(read_msg_);
 	    }
             do_read_header();
           }
           else
           {
-            room_.leave(shared_from_this());
+            (*room_).leave(shared_from_this());
           }
         });
   }
@@ -388,7 +414,9 @@ private:
   std::string get_body(std::string body)
   {
     std::string time = get_time();
-    std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
+    std::string package = time + body;
+    std::string crc = get_crc(package.c_str(), std::strlen(package.c_str()));
+    //std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
     std::string data = crc + "," + time + "," + body;
 
     return data;
@@ -412,18 +440,20 @@ private:
           }
           else
           {
-            room_.leave(shared_from_this());
+            (*room_).leave(shared_from_this());
           }
         });
   }
 
   tcp::socket socket_;
-  chat_room& room_;
+  //chat_room& room_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
 
   boost::uuids::uuid uuid_;
   std::string nick_;
+  //chat_room* curr_room_;
+  chat_room* room_;
 };
 
 //----------------------------------------------------------------------
@@ -439,6 +469,7 @@ public:
     do_accept();
     chatrooms.insert(&room_);
     room_.set_name("The Lobby");
+    room_.count_ = 5;
   }
 
 private:
