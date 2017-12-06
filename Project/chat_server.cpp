@@ -14,23 +14,17 @@
 #include <iostream>
 #include <list>
 #include <memory>
-#include <string>
 #include <set>
 #include <utility>
 #include <zlib.h>
 #include <boost/asio.hpp>
-<<<<<<< HEAD
-#include <boost/shared_ptr.hpp>
-=======
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/date_time.hpp>
->>>>>>> jeet
 #include "chat_message.hpp"
 
 using boost::asio::ip::tcp;
-// using namespace std;
 
 //----------------------------------------------------------------------
 
@@ -41,31 +35,13 @@ typedef std::deque<chat_message> chat_message_queue;
 class chat_participant
 {
 public:
-    chat_participant(std::string p_name)
-  {
-      name = p_name;
-  }
-  chat_participant()
-  {
-  }
   virtual ~chat_participant() {}
   virtual void deliver(const chat_message& msg) = 0;
-<<<<<<< HEAD
-
-  std::string get_name()
-  {
-      return name;
-  }
-
-protected:
-    std::string name;
-=======
   virtual std::string get_user() 
   {
     return "";
   }
 
->>>>>>> jeet
 };
 
 typedef std::shared_ptr<chat_participant> chat_participant_ptr;
@@ -76,31 +52,6 @@ typedef std::shared_ptr<chat_participant> chat_participant_ptr;
 class chat_room
 {
 public:
-    chat_room(std::string c_name)
-  {
-      name = c_name;
-  }
-    chat_room()
-  {
-
-  }
-
-  std::string get_name()
-  {
-      return name;
-  }
-
-  std::list<std::string> get_users()
-  {
-       std::list<std::string> users;
-      std::set<chat_participant_ptr>::iterator it;
-        for (it = participants_.begin(); it != participants_.end(); ++it)
-        {
-            users.push_back((*it)->get_name());
-        }
-        return users;
-  }
-
   void join(chat_participant_ptr participant)
   {
     participants_.insert(participant);
@@ -113,18 +64,6 @@ public:
     participants_.erase(participant);
   }
 
-  chat_participant_ptr get_participant(std::string name)
-  {
-      std::set<chat_participant_ptr>::iterator it;
-        for (it = participants_.begin(); it != participants_.end(); ++it)
-        {
-            if((*it)->get_name() == name)
-            {
-                return (chat_participant_ptr)(*it);
-            }
-        }
-  }
-
   void deliver(const chat_message& msg)
   {
     recent_msgs_.push_back(msg);
@@ -135,13 +74,6 @@ public:
       participant->deliver(msg);
   }
 
-<<<<<<< HEAD
-  chat_message_queue get_messages()
-  {
-      return recent_msgs_;
-  }
-
-=======
   void set_name(std::string name)
   {
     name_ = name;
@@ -164,7 +96,7 @@ public:
       }
       else
       {
-	users+=";" + participant->get_user();
+	users+="," + participant->get_user();
       }
     }
 
@@ -195,11 +127,9 @@ public:
     text_.clear();
     return text;
   } 
-    
+   
 
->>>>>>> jeet
 private:
-    std::string name;
   std::set<chat_participant_ptr> participants_;
   enum { max_recent_msgs = 100 };
   chat_message_queue recent_msgs_;
@@ -217,20 +147,18 @@ class chat_session
     public std::enable_shared_from_this<chat_session>
 {
 public:
-  chat_session(tcp::socket socket, chat_room* room/*, std::string p_name*/)
-  : socket_(std::move(socket)),
-    room_(room)//, name_(p_name)
+  chat_session(tcp::socket socket, chat_room& room)
+    : socket_(std::move(socket))
+      //*room_(room)
   {
-<<<<<<< HEAD
-      //name = p_name;
-=======
     uuid_ = boost::uuids::random_generator()();
->>>>>>> jeet
+    //(*curr_room_) = room_;
+    room_ = &room;
   }
 
   void start()
   {
-    room_->join(shared_from_this());
+    (*room_).join(shared_from_this());
     do_read_header();
   }
 
@@ -246,13 +174,10 @@ public:
 
   std::string get_user()
   {
-    return to_string(uuid_) + " " + nick_;
+    return to_string(uuid_) + "," + nick_;
   }
 
 private:
-<<<<<<< HEAD
-    std::string name_;
-=======
   std::string get_time()
   {
     using namespace boost::posix_time;
@@ -271,7 +196,6 @@ private:
     return std::to_string(crc);
   }
 
->>>>>>> jeet
   void do_read_header()
   {
     auto self(shared_from_this());
@@ -285,7 +209,7 @@ private:
           }
           else
           {
-            room_->leave(shared_from_this());
+            (*room_).leave(shared_from_this());
           }
         });
   }
@@ -299,9 +223,6 @@ private:
         {
           if (!ec)
           {
-<<<<<<< HEAD
-            room_->deliver(read_msg_);
-=======
   	   // std::cout << "received " << read_msg_.body() << std::endl;
 	    std::string cmd, arg;
 	    char body[512];
@@ -333,8 +254,9 @@ private:
 	      chat_message msg;
         std::string body = cmd + "," + to_string(uuid_);
 	      std::string data = get_body(body);
-	      msg.body_length(std::strlen(data.c_str()));     
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
         deliver(msg);
 	    }
@@ -344,15 +266,15 @@ private:
 	    }
 	    else if(cmd == "REQCHATROOM")
 	    {
-	      std::string room_name = room_.get_name();
+	      std::string room_name = (*room_).get_name();
 	      chat_message msg;
-              std::string body = cmd + "," + room_name;
+        std::string body = cmd + "," + room_name;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
-              deliver(msg);
+        deliver(msg);
 	    }
 	    else if(cmd == "REQCHATROOMS")
 	    {
@@ -360,38 +282,60 @@ private:
 	      for (auto chat_room: chatrooms)
 	      {
 	        if(names == "")
-		{
+		      {
       		  names = chat_room->get_name();
-		}
-		else
-		{
-		  names+=";" + chat_room->get_name();
-		}
+		      }
+		      else
+	      	{
+		        names+="," + chat_room->get_name();
+		      }
 	      }
 
 	      chat_message msg;
-              std::string body = cmd + "," + names;
+        std::string body = cmd + "," + names;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
-              deliver(msg);
+        deliver(msg);
 	    }
 	    else if(cmd == "NAMECHATROOM")
 	    {
-	      chat_room* chatroom = new chat_room();
-	      chatroom->set_name(arg);
-	      chatrooms.insert(chatroom);
+	      bool found = false;
+	      for (auto chat_room: chatrooms)
+	      {
+	        std::string name = chat_room->get_name();
+	        if(strcmp(name.c_str(), arg.c_str()) == 0)
+		{
+		  found = true;
+		  break;
+		}
+	      }
 
-	      chat_message msg;
-              std::string body = cmd + "," + arg;
-	      std::string data = get_body(body);
+	      if(!found)
+	      {
+	        chat_room* chatroom = new chat_room();
+	        chatroom->set_name(arg);
+	        chatrooms.insert(chatroom);
 
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
-	      msg.encode_header();
-              deliver(msg);
+	        chat_message msg;
+                std::string body = cmd + "," + arg;
+	        std::string data = get_body(body);
+	        msg.body_length(std::strlen(data.c_str())+1);
+                std::memset(msg.body(), 0, msg.body_length());
+                std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
+	        msg.encode_header();
+                (*room_).deliver(msg);
+/*
+	      for (auto chat_room: chatrooms)
+	      {
+	        std::string name = chat_room->get_name();
+	        std::cout << name << (*room_).count_ << std::endl; 
+	      }
+	      std::cout << "Default:" << (*room_).get_name() << (*room_).count_ << std::endl;
+*/
+	      }
 	    }
 	    else if(cmd == "CHANGECHATROOM")
 	    {
@@ -399,71 +343,68 @@ private:
 	      {
 	        std::string name = chat_room->get_name();
 	        if(name == arg)
-		{
-		  room_.leave(shared_from_this());
-		  chat_room->join(shared_from_this());
-		  room_ = *chat_room;
-		  
-		  chat_message msg;
-                  std::string body = cmd + "," + name;
-   	   	  std::string data = get_body(body);
+		      {
+            (*room_).leave(shared_from_this());
+            chat_room->join(shared_from_this());
+            room_ = chat_room;
 
-	          msg.body_length(std::strlen(data.c_str()));
-	          std::memcpy(msg.body(), data.c_str(), msg.body_length());
+            chat_message msg;
+            std::string body = cmd + "," + name;
+   	   	    std::string data = get_body(body);
+	          msg.body_length(std::strlen(data.c_str())+1);
+            std::memset(msg.body(), 0, msg.body_length());
+	          std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	          msg.encode_header();
-                  deliver(msg);
+            deliver(msg);
       		  break;
-		}
+		      }
 	      }
 	    }
 	    else if(cmd == "SENDTEXT")
 	    {
-	      chat_message msg;
-        std::string body = cmd + "," + std::to_string(arg.length());
+        arg = nick_ + ": " + arg;
+        std::string body = cmd + "," + arg + "," + std::to_string(arg.length());
 	      std::string data = get_body(body);
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
-	      msg.encode_header();
-        deliver(msg);
-        
-	      room_.store_text(to_string(uuid_) + " " + arg);
-	      room_.deliver(read_msg_);
+	      read_msg_.body_length(std::strlen(data.c_str())+1);
+        std::memset(read_msg_.body(), 0, read_msg_.body_length()); 
+	      std::memcpy(read_msg_.body(), data.c_str(), read_msg_.body_length()-1);
+	      read_msg_.encode_header();       
+	      (*room_).store_text(to_string(uuid_) + " " + arg);
+	      (*room_).deliver(read_msg_);
 	    }
 	    else if(cmd == "REQTEXT")
 	    {
-	      std::string text = room_.get_text();
+	      std::string text = (*room_).get_text();
 	      chat_message msg;
-
-              std::string body = cmd + "," + text;
+        std::string body = cmd + "," + text;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
-              deliver(msg);
+        deliver(msg);
 	    }
 	    else if(cmd == "REQUSERS")
 	    {
 	      chat_message msg;
-	      std::string users = room_.get_users();
-              std::string body = cmd + "," + users;
+	      std::string users = (*room_).get_users();
+        std::string body = cmd + "," + users;
 	      std::string data = get_body(body);
-
-	      msg.body_length(std::strlen(data.c_str()));
-	      std::memcpy(msg.body(), data.c_str(), msg.body_length());
+	      msg.body_length(std::strlen(data.c_str())+1);
+        std::memset(msg.body(), 0, msg.body_length());
+        std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	      msg.encode_header();
-              deliver(msg);
+        (*room_).deliver(msg);
 	    }
 	    else
 	    {
-	      room_.deliver(read_msg_);
+	      (*room_).deliver(read_msg_);
 	    }
->>>>>>> jeet
             do_read_header();
           }
           else
           {
-            room_->leave(shared_from_this());
+            (*room_).leave(shared_from_this());
           }
         });
   }
@@ -471,7 +412,9 @@ private:
   std::string get_body(std::string body)
   {
     std::string time = get_time();
-    std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
+    std::string package = time + body;
+    std::string crc = get_crc(package.c_str(), std::strlen(package.c_str()));
+    //std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
     std::string data = crc + "," + time + "," + body;
 
     return data;
@@ -495,18 +438,20 @@ private:
           }
           else
           {
-            room_->leave(shared_from_this());
+            (*room_).leave(shared_from_this());
           }
         });
   }
 
   tcp::socket socket_;
-  chat_room* room_;
+  //chat_room& room_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
 
   boost::uuids::uuid uuid_;
   std::string nick_;
+  //chat_room* curr_room_;
+  chat_room* room_;
 };
 
 //----------------------------------------------------------------------
@@ -524,136 +469,7 @@ public:
     room_.set_name("The Lobby");
   }
 
-  std::string add_client(std::string nick)
-  {
-        std::list<std::string>::const_iterator iterator;
-        for (iterator = clients.begin(); iterator != clients.end(); ++iterator)
-        {
-            if(*iterator == nick)
-            {
-                return "Nickname \'" + nick + "\' already exists!";
-            }
-        }
-        clients.push_back(nick);
-        return "";
-  }
-
-  std::string add_chatroom(std::string name)
-  {
-        std::list<chat_room*>::const_iterator it;
-        for (it = chatrooms.begin(); it != chatrooms.end(); ++it)
-        {
-            if((*it)->get_name() == name)
-            {
-                return "Chatroom \'" + name + "\' already exists!";
-            }
-        }
-        chatrooms.push_back(new chat_room(name));
-        return "";
-  }
-
-  void join_chatroom(tcp::socket socket, std::string c_name, std::string p_name)
-  {
-      std::list<chat_room*>::const_iterator iterator;
-        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
-        {
-            if((*iterator)->get_name() == c_name)
-            {
-                chat_participant_ptr participant = (*iterator)->get_participant(p_name);
-                if(participant == NULL)
-                {
-                   //chat_room room =  *(*iterator);
-                   chat_session* session = new chat_session(std::move(socket), *iterator/*, p_name*/);
-                    (*iterator)->join((chat_participant_ptr)session);
-                }
-                break;
-            }
-        }
-  }
-
-  void leave_chatroom(std::string c_name, std::string p_name)
-  {
-      std::list<chat_room*>::const_iterator iterator;
-        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
-        {
-            if((*iterator)->get_name() == c_name)
-            {
-                chat_participant_ptr participant = (*iterator)->get_participant(p_name);
-                if(participant != NULL)
-                {
-                    (*iterator)->leave(participant);
-                }
-                break;
-            }
-        }
-  }
-
-  void delete_chatroom(std::string name)
-  {
-      std::list<chat_room*>::const_iterator iterator;
-        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
-        {
-            if((*iterator)->get_name() == name)
-            {
-                chatrooms.remove(*iterator);
-            }
-        }
-  }
-
-  void delete_client(std::string nick)
-  {
-        std::list<std::string>::const_iterator iterator;
-        for (iterator = clients.begin(); iterator != clients.end(); ++iterator)
-        {
-            if(*iterator == nick)
-            {
-                clients.remove(nick);
-            }
-        }
-  }
-
-  std::list<std::string> req_chatrooms()
-  {
-      std::list<std::string> chatrooom_names;
-      std::list<chat_room*>::const_iterator iterator;
-        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
-        {
-            chatrooom_names.push_back((*iterator)->get_name());
-        }
-      return chatrooom_names;
-  }
-
-  std::list<std::string> req_users(std::string c_name)
-  {
-      std::list<std::string> users;
-      std::list<chat_room*>::const_iterator iterator;
-        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
-        {
-            if(c_name == (*iterator)->get_name())
-            {
-                return (*iterator)->get_users();
-            }
-        }
-      return users;
-  }
-
-  chat_message_queue reqtext(std::string c_name)
-  {
-      chat_message_queue recent_msgs;
-      std::list<chat_room*>::const_iterator iterator;
-        for (iterator = chatrooms.begin(); iterator != chatrooms.end(); ++iterator)
-        {
-            if(c_name == (*iterator)->get_name())
-            {
-                return (*iterator)->get_messages();
-            }
-        }
-      return recent_msgs;
-  }
 private:
-    std::list<std::string> clients;
-    std::list<chat_room*> chatrooms;
-
   void do_accept()
   {
     acceptor_.async_accept(socket_,
@@ -670,7 +486,7 @@ private:
 
   tcp::acceptor acceptor_;
   tcp::socket socket_;
-  chat_room* room_;
+  chat_room room_;
 };
 
 //----------------------------------------------------------------------
