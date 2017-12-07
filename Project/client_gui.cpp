@@ -33,10 +33,10 @@ Fl_Window win   	(900, 405, "UberChat");
 Fl_Output welcome_nick	(10, 10, 150, 20);
 Fl_Button mod   	(690, 10, 80, 20, "Moderator");
 Fl_Output rooms_title 	(10, 40, 150, 20);
-Fl_Button change_room (15, 380, 120, 13, "Change Rooms");
-Fl_Button add_room 	(140, 380, 18, 13, "+");
-Fl_Output chat_title	(165, 40, 570, 20);
-Fl_Button delet 	(675, 42, 58, 16, "Delete");
+Fl_Button change_room (10, 375, 125, 20, "Change Rooms");
+Fl_Button add_room 	(135, 375, 25, 20, "+");
+Fl_Output chat_title	(165, 40, 510, 20);
+Fl_Button delet 	(675, 40, 58, 20, "Delete");
 Fl_Input input1 	(165, 375, 520, 20);
 Fl_Button send_b 	(685, 375, 50, 20, "Send");
 Fl_Output nicks_title 	(740, 40, 150, 20);
@@ -125,7 +125,8 @@ static void cb_recv ( std::string S )
     {
       if(tokens.size() >= 4)
       {
-        std::string T = tokens.at(3) + '\n' + '\0';
+        std::string time = tokens.at(1);
+        std::string T = "[" + time.substr(9,2) + ":" + time.substr(11,2) + ":" + time.substr(13,2) + "] " + tokens.at(3) + '\n' + '\0';
         if (buff)
         {
           buff->append ( T.c_str () );
@@ -175,10 +176,6 @@ static void cb_recv ( std::string S )
       {
         std::string data = tokens.at(3) + "\0";
         chat_title.value(data.c_str());
-        if (buff)
-        {
-          buff->remove (0,  buff->length () );
-        }
         c->reqnewinfo();
       }
     }
@@ -197,6 +194,10 @@ static void cb_recv ( std::string S )
 //Callback
 static void cb_change(){
   std::string data = change_room_name.value();
+	if (buff)
+	{
+    buff->remove (0,  buff->length () );
+	}
   c->changechatroom(data);
   win5.hide();
 }
@@ -364,8 +365,12 @@ void beginChat(const char *nick_name){
     rooms->buffer(rooms_buff);
     win.add(rooms);
     win.add(change_room);
+    change_room.box(FL_BORDER_BOX);
+    change_room.color(FL_WHITE);
     change_room.callback((Fl_Callback*) cb_change_room);
     win.add(add_room);
+    add_room.box(FL_BORDER_BOX);
+    add_room.color(FL_WHITE);
     add_room.callback((Fl_Callback*)cb_add_room);
 
 //Chat box -----------------------------------
@@ -438,6 +443,7 @@ void beginLogin(){
     nick.callback((Fl_Callback *)cb_submit, (void*) "Enter nick:");
     nick.when(FL_WHEN_ENTER_KEY);
     win1.add(submit);
+    submit.color(FL_GREEN);
     submit.callback((Fl_Callback *)cb_submit);
     win1.add(mod_button);
   win1.end();
