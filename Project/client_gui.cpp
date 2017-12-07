@@ -174,9 +174,18 @@ static void cb_recv ( std::string S )
       if(tokens.size() == 4)
       {
         std::string data = tokens.at(3) + "\0";
-        std::cout << "change chat room data is --- " << tokens.at(3) << std::endl;
         chat_title.value(data.c_str());
+        if (buff)
+        {
+          buff->remove (0,  buff->length () );
+        }
       }
+    }
+    else if(tokens.at(2).compare("REQNEWINFO") ==0)
+    {
+      std::cout<< "in client gui" << std::endl;
+      //c->requsers();
+      //c->reqchatrooms();
     }
   }
   win.show ();

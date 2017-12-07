@@ -66,12 +66,17 @@ public:
 
   void deliver(const chat_message& msg)
   {
+    std::cout << "in chat room delivering " << msg.body() << std::endl;
     recent_msgs_.push_back(msg);
     while (recent_msgs_.size() > max_recent_msgs)
+    {
       recent_msgs_.pop_front();
-
+    }
+    
     for (auto participant: participants_)
+    {
       participant->deliver(msg);
+    }
   }
 
   void set_name(std::string name)
@@ -87,16 +92,15 @@ public:
   std::string get_users()
   {
     std::string users = "";
-
     for (auto participant: participants_)
     {
       if(users == "")
       {
-	users = participant->get_user();
+	      users = participant->get_user();
       }
       else
       {
-	users+="," + participant->get_user();
+	      users+="," + participant->get_user();
       }
     }
 
@@ -111,7 +115,6 @@ public:
   std::string get_text()
   {
     std::string text = "";
-
     for (auto string: text_)
     {
       if(text == "")
@@ -127,8 +130,7 @@ public:
     text_.clear();
     return text;
   } 
-   
- 
+  
   int count_ = 0;
 
 private:
@@ -166,6 +168,7 @@ public:
 
   void deliver(const chat_message& msg)
   {
+  std::cout << "in chat session delivering " << msg.body() << std::endl;
     bool write_in_progress = !write_msgs_.empty();
     write_msgs_.push_back(msg);
     if (!write_in_progress)
@@ -177,6 +180,22 @@ public:
   std::string get_user()
   {
     return to_string(uuid_) + "," + nick_;
+  }
+
+  void getnewinfo()
+  {
+  std::cout << "get new info called" << std::endl;
+    for(auto chat_room: chatrooms)
+    {
+      std::cout <<"in for loop for getnewinfo" << std::endl;
+      chat_message reqnewinfo;
+      std::string data = "REQNEWINFO";
+      std::string info = get_body(data);
+      reqnewinfo.body_length(std::strlen(info.c_str())+1);
+      std::memset(reqnewinfo.body(), 0, reqnewinfo.body_length());
+      std::memcpy(reqnewinfo.body(), info.c_str(), reqnewinfo.body_length()-1);
+      (*chat_room).deliver(reqnewinfo);
+    }
   }
 
 private:
@@ -358,6 +377,7 @@ private:
 	          std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	          msg.encode_header();
             deliver(msg);
+            getnewinfo();
       		  break;
 		      }
 	      }
@@ -414,7 +434,7 @@ private:
   std::string get_body(std::string body)
   {
     std::string time = get_time();
-    std::string package = time + body;
+    std::string package = time + "," + body;
     std::string crc = get_crc(package.c_str(), std::strlen(package.c_str()));
     //std::string crc = get_crc(body.c_str(), std::strlen(body.c_str()));
     std::string data = crc + "," + time + "," + body;
@@ -470,6 +490,7 @@ public:
     chatrooms.insert(&room_);
     room_.set_name("The Lobby");
     room_.count_ = 5;
+    std::cout << "lobby created" << std::endl;
   }
 
 private:

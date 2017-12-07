@@ -212,10 +212,11 @@ public:
   
   std::vector<std::string> decode_msg(std::string message)
   {
+    std::cout << "in decode msg, received " << message << std::endl;
     i++;
     std::vector<std::string> tokens = split(message, ',');
-    std::string data = tokens.at(2);
-    for(unsigned int i = 3; i < tokens.size(); i++)
+    std::string data = tokens.at(1);
+    for(unsigned int i = 2; i < tokens.size(); i++)
     {
       data += "," + tokens.at(i);
     }
