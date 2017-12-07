@@ -36,7 +36,7 @@ Fl_Output rooms_title 	(10, 40, 150, 20);
 Fl_Button change_room (10, 375, 125, 20, "Change Rooms");
 Fl_Button add_room 	(135, 375, 25, 20, "+");
 Fl_Output chat_title	(165, 40, 510, 20);
-Fl_Button delet 	(675, 40, 58, 20, "Delete");
+Fl_Button delet 	(675, 40, 60, 20, "Delete");
 Fl_Input input1 	(165, 375, 520, 20);
 Fl_Button send_b 	(685, 375, 50, 20, "Send");
 Fl_Output nicks_title 	(740, 40, 150, 20);
@@ -214,8 +214,12 @@ void begin_change_room(){
     win5.color(FL_WHITE);
     win5.add(change_room_name);
     win5.add(change);
+    change.color(FL_GREEN);
+    change.box(FL_BORDER_BOX);
     change.callback((Fl_Callback*)cb_change);
     win5.add(cancel_change);
+    cancel_change.color(FL_RED);
+    cancel_change.box(FL_BORDER_BOX);
     cancel_change.callback((Fl_Callback*)cb_cancel_change);
   win5.end();
   win5.show();
@@ -277,8 +281,12 @@ void begin_add_room(){
     room_name.callback((Fl_Callback *)cb_create, (void *) "room");
     room_name.when(FL_WHEN_ENTER_KEY);
     win3.add(create);
+    create.box(FL_BORDER_BOX);
+    create.color(FL_GREEN);
     create.callback((Fl_Callback*)cb_create);
     win3.add(cancel);
+    cancel.color(FL_RED);
+    cancel.box(FL_BORDER_BOX);
     cancel.callback((Fl_Callback*)cb_cancel);
   win3.end();
   win3.show();
@@ -353,7 +361,13 @@ void beginChat(const char *nick_name){
     win.color(FL_WHITE);
     welcome_nick.value(nick_name);	//name of nick on top left
     win.add(welcome_nick);
+    if(mod_button.value() == 0)
+    {
+      mod.hide();
+    }
     win.add(mod);			//moderator
+    mod.color(FL_GREEN);
+    mod.box(FL_BORDER_BOX);
     mod.callback((Fl_Callback *) cb_mod);
 
 //List of Rooms--------------------------------
@@ -379,6 +393,7 @@ void beginChat(const char *nick_name){
     chat_title.box(FL_BORDER_BOX);
     win.add(chat_title);
     win.add(delet);
+    delet.box(FL_BORDER_BOX);
     delet.color(FL_RED);
     delet.labelsize(13);
     delet.callback((Fl_Callback*)cb_delet);
@@ -404,8 +419,12 @@ void beginChat(const char *nick_name){
     nicks->buffer(nick_buff);
     clear.callback (( Fl_Callback*) cb_clear );
     win.add(clear);
+    clear.color(FL_WHITE);
+    clear.box(FL_BORDER_BOX);
     quit.callback (( Fl_Callback*) cb_quit );
     win.add (quit);
+    quit.color(FL_RED);
+    quit.box(FL_BORDER_BOX);
   win.end ();
   win.show ();
 }
