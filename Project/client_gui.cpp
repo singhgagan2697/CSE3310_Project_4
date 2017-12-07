@@ -88,7 +88,7 @@ static void cb_recv ( std::string S )
   //
   // high chance of a lock needed here if certain fltk calls
   // are made.  (like show() .... )
-  
+  std::cout << "received " << S << std::endl;
   std::vector<std::string> tokens = c->decode_msg(S);
   if(tokens.size() > 2)
   {
@@ -179,13 +179,14 @@ static void cb_recv ( std::string S )
         {
           buff->remove (0,  buff->length () );
         }
+        c->reqnewinfo();
       }
     }
     else if(tokens.at(2).compare("REQNEWINFO") ==0)
     {
       std::cout<< "in client gui" << std::endl;
-      //c->requsers();
-      //c->reqchatrooms();
+      c->requsers();
+      c->reqchatrooms();
     }
   }
   win.show ();
@@ -415,8 +416,6 @@ static void cb_submit(){
   c->requuid();
   beginChat(nick_name);
   c->changechatroom("The Lobby");
-  c->reqchatrooms();
-  c->requsers();
   win1.hide();
 }
 

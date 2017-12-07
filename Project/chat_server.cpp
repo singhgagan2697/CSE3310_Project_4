@@ -194,6 +194,7 @@ public:
       reqnewinfo.body_length(std::strlen(info.c_str())+1);
       std::memset(reqnewinfo.body(), 0, reqnewinfo.body_length());
       std::memcpy(reqnewinfo.body(), info.c_str(), reqnewinfo.body_length()-1);
+      reqnewinfo.encode_header();
       (*chat_room).deliver(reqnewinfo);
     }
   }
@@ -377,11 +378,14 @@ private:
 	          std::memcpy(msg.body(), data.c_str(), msg.body_length()-1);
 	          msg.encode_header();
             deliver(msg);
-            getnewinfo();
       		  break;
 		      }
 	      }
 	    }
+      else if (cmd == "REQNEWINFO")
+      {
+        getnewinfo();
+      }
 	    else if(cmd == "SENDTEXT")
 	    {
         arg = nick_ + ": " + arg;
