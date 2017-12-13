@@ -1,7 +1,7 @@
 
 CPPFLAGS = -Wall -O0 -g -std=c++11
 
-all: chat_server chat_client client_gui
+all: chat_server client_gui
 
 chat_server: chat_server.cpp chat_message.hpp
 		g++ ${CPPFLAGS} -o chat_server chat_server.cpp \

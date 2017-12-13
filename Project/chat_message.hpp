@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 
-class chat_message
+class chat_message		//class for the chat messages sent by both client and server
 {
 public:
   enum { header_length = 4 };
