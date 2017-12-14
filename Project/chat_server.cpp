@@ -24,6 +24,17 @@
 #include <boost/date_time.hpp>
 #include "chat_message.hpp"
 
+class test
+{
+  public:
+ void testLessThan(int argc, int val)
+  {
+    assert(argc == val);
+  }  
+
+};
+
+
 using boost::asio::ip::tcp;
 
 //----------------------------------------------------------------------
@@ -66,6 +77,7 @@ public:
 
   void deliver(const chat_message& msg)
   {
+    assert(msg.body() != NULL);
     std::cout << "in chat room delivering " << msg.body() << std::endl;
     recent_msgs_.push_back(msg);
     while (recent_msgs_.size() > max_recent_msgs)
@@ -523,6 +535,8 @@ int main(int argc, char* argv[])
 {
   try
   {
+    test t;
+t.testLessThan(argc, 2);
     if (argc < 2)
     {
       std::cerr << "Usage: chat_server <port> [<port> ...]\n";
